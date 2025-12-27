@@ -1,40 +1,28 @@
-import Link from "next/link";
-
 export default function HomePage() {
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100">
-            <div className="text-center bg-white/70 backdrop-blur-md rounded-2xl shadow-sm px-10 py-12 max-w-lg w-full">
+        <main className="min-h-screen bg-[#FBF6F4] flex flex-col items-center justify-center px-6 text-center">
+            <h1 className="text-5xl font-serif text-[#6B4E4E] leading-tight">
+                Petals by You
+            </h1>
 
-                {/* Title */}
-                <h1 className="text-4xl font-semibold text-black">
-                    Petals By You
-                </h1>
+            <p className="mt-4 text-lg text-[#9A7A7A] max-w-xl">
+                Where every bouquet tells your story
+            </p>
 
-                {/* Tagline */}
-                <p className="mt-3 text-black">
-                    Perfect flowers for every occassion
-                </p>
+            <div className="mt-10 flex gap-6">
+                <a
+                    href="/login"
+                    className="px-8 py-3 rounded-full bg-[#E8B4B8] text-white text-sm tracking-wide hover:bg-[#D9A3A7] transition"
+                >
+                    Login
+                </a>
 
-                {/* Buttons */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-
-                    <Link
-                        href="/login"
-                        className="px-6 py-2 rounded-full border border-rose-300 text-black text-sm font-medium
-                       hover:bg-pink-100 transition"
-                    >
-                        Login
-                    </Link>
-
-                    <Link
-                        href="/register"
-                        className="px-6 py-2 rounded-full bg-pink-100 text-black text-sm font-medium
-                       hover:bg-pink-200 transition"
-                    >
-                        Sign Up
-                    </Link>
-
-                </div>
+                <a
+                    href="/register"
+                    className="px-8 py-3 rounded-full border border-[#E6C1C1] text-[#6B4E4E] text-sm tracking-wide hover:bg-[#F3E6E6] transition"
+                >
+                    Sign Up
+                </a>
             </div>
         </main>
     );
