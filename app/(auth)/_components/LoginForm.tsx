@@ -18,7 +18,7 @@ export default function LoginForm() {
     const onSubmit = (data: LoginData) => {
         startTransition(async () => {
             await new Promise((r) => setTimeout(r, 1000));
-            router.push("/auth/dashboard");
+            router.push("/(auth)/dashboard");
         });
     };
 

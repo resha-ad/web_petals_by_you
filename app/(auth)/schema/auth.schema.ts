@@ -8,7 +8,8 @@ export const loginSchema = z.object({
 export type LoginData = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
-    name: z.string().min(2, "Name is required"),
+    firstName: z.string().min(2, "First name is required"),
+    lastName: z.string().min(2, "Last name is required"),
     email: z.string().email("Please enter a valid email"),
     password: z.string().min(6),
     confirmPassword: z.string().min(6),
