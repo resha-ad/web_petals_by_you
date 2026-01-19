@@ -1,4 +1,6 @@
-import api from "./axios"
+import { UserData } from '../cookie';
+import api from './axios';
+import { API } from './endpoint';
 
 interface RegisterData {
     email: string;
@@ -11,26 +13,20 @@ interface LoginData {
     password: string;
 }
 
-interface UserResponse {
-    id: string;
-    email: string;
-    role: string;
-    message?: string;
+export interface RegisterResponse {
+    message: string;
+    user?: UserData;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
     token: string;
-    user: {
-        id: string;
-        email: string;
-        role: string;
-    };
+    user: UserData;
 }
 
 export const registerUser = (data: RegisterData) => {
-    return api.post<UserResponse>("/auth/register", data);
+    return api.post<RegisterResponse>(API.AUTH.REGISTER, data);
 };
 
 export const loginUser = (data: LoginData) => {
-    return api.post<LoginResponse>("/auth/login", data);
+    return api.post<LoginResponse>(API.AUTH.LOGIN, data);
 };
