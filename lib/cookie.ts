@@ -1,6 +1,6 @@
-"use server"
+"use server";
 
-import { cookies } from "next/headers"
+import { cookies } from "next/headers";
 
 export interface UserData {
     _id: string;
@@ -11,32 +11,42 @@ export interface UserData {
     updatedAt: string;
     [key: string]: any;
 }
+
 export const setAuthToken = async (token: string) => {
     const cookieStore = await cookies();
+
     cookieStore.set({
-        name: 'auth_token',
+        name: "auth_token",
         value: token,
-    })
-}
+        httpOnly: true,
+        path: "/",
+    });
+};
+
 export const getAuthToken = async () => {
     const cookieStore = await cookies();
-    return cookieStore.get('auth_token')?.value || null;
-}
+    return cookieStore.get("auth_token")?.value || null;
+};
+
 export const setUserData = async (userData: UserData) => {
     const cookieStore = await cookies();
+
     cookieStore.set({
-        name: 'user_data',
+        name: "user_data",
         value: JSON.stringify(userData),
-    })
-}
+        httpOnly: true,
+        path: "/",
+    });
+};
+
 export const getUserData = async (): Promise<UserData | null> => {
     const cookieStore = await cookies();
-    const userData = cookieStore.get('user_data')?.value || null;
+    const userData = cookieStore.get("user_data")?.value || null;
     return userData ? JSON.parse(userData) : null;
-}
+};
 
 export const clearAuthCookies = async () => {
     const cookieStore = await cookies();
-    cookieStore.delete('auth_token');
-    cookieStore.delete('user_data');
-}
+    cookieStore.delete("auth_token");
+    cookieStore.delete("user_data");
+};

@@ -1,85 +1,56 @@
-import { loginUser, registerUser } from "../api/auth";
-import { clearAuthCookies, getAuthToken, getUserData, setAuthToken, setUserData, UserData } from "../cookie";
+"use server";
 
+import { login, register } from "@/lib/api/auth";
+import { LoginData, RegisterData } from "@/app/(auth)/schema/auth.schema";
+import { setAuthToken, setUserData, clearAuthCookies } from "@/lib/cookie";
+import { redirect } from "next/navigation";
 
-export interface RegisterData {
-    email: string;
-    password: string;
-    role?: string;
-}
-
-export interface LoginData {
-    email: string;
-    password: string;
-}
-
-
-interface LoginResponse {
-    token: string;
-    user: UserData;
-}
-
-interface RegisterResponse {
-    message: string;
-    user?: UserData;
-}
-
-export interface LoginResult {
-    success: boolean;
-    user?: UserData;
-    token?: string;
-    message?: string;
-}
-
-export interface RegisterResult {
-    success: boolean;
-    message: string;
-    user?: UserData;
-}
-
-export const registerAction = async (data: RegisterData): Promise<RegisterResult> => {
+export const handleRegister = async (data: RegisterData) => {
     try {
-        const res = await registerUser(data);
-        const responseData: RegisterResponse = res.data;
+        const response = await register(data);
 
-        return {
-            success: true,
-            message: responseData.message || "Registration successful",
-            user: responseData.user,
-        };
-    } catch (err: any) {
+        if (response.success) {
+            return {
+                success: true,
+                message: "Registration successful",
+                data: response.data,
+            };
+        }
+
         return {
             success: false,
-            message: err.response?.data?.message || "Registration failed",
+            message: response.message || "Registration failed",
         };
+    } catch (error: any) {
+        return { success: false, message: error.message };
     }
 };
 
-export const loginAction = async (data: LoginData): Promise<LoginResult> => {
+export const handleLogin = async (data: LoginData) => {
     try {
-        const res = await loginUser(data);
-        const responseData: LoginResponse = res.data;
+        const response = await login(data);
 
-        const { token, user } = responseData;
+        if (response.success) {
+            await setAuthToken(response.token);
+            await setUserData(response.data);
 
-        await setAuthToken(token);
-        await setUserData(user);
+            return {
+                success: true,
+                message: "Login successful",
+                data: response.data,
+            };
+        }
 
-        return { success: true, user, token };
-    } catch (err: any) {
         return {
             success: false,
-            message: err.response?.data?.message || "Login failed",
+            message: response.message || "Login failed",
         };
+    } catch (error: any) {
+        return { success: false, message: error.message };
     }
 };
 
-export const logoutAction = async () => {
+export const handleLogout = async () => {
     await clearAuthCookies();
-};
-
-export const getLoggedInUser = async () => {
-    const token = await getAuthToken();
-    const user = await getUserData();
-    return { token, user };
+    redirect("/login");
 };

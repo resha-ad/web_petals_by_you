@@ -1,32 +1,23 @@
-import { UserData } from '../cookie';
-import api from './axios';
-import { API } from './endpoint';
+import { LoginData, RegisterData } from "@/app/(auth)/schema/auth.schema";
+import axios from "./axios";
+import { API } from "./endpoints";
 
-interface RegisterData {
-    email: string;
-    password: string;
-    role?: string;
-}
-
-interface LoginData {
-    email: string;
-    password: string;
-}
-
-export interface RegisterResponse {
-    message: string;
-    user?: UserData;
-}
-
-export interface LoginResponse {
-    token: string;
-    user: UserData;
-}
-
-export const registerUser = (data: RegisterData) => {
-    return api.post<RegisterResponse>(API.AUTH.REGISTER, data);
+export const register = async (data: RegisterData) => {
+    try {
+        const response = await axios.post(API.AUTH.REGISTER, data);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || "Registration failed"
+        );
+    }
 };
 
-export const loginUser = (data: LoginData) => {
-    return api.post<LoginResponse>(API.AUTH.LOGIN, data);
+export const login = async (data: LoginData) => {
+    try {
+        const response = await axios.post(API.AUTH.LOGIN, data);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || "Login failed");
+    }
 };
