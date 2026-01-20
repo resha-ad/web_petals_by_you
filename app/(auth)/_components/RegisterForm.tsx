@@ -4,100 +4,110 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { registerSchema, RegisterData } from "../schema/auth.schema";
-import { useState } from "react";
+import { RegisterData, registerSchema } from "../schema/auth.schema";
+import { handleRegister } from "@/lib/actions/auth-action";
+import { useState, useTransition } from "react";
 
 export default function RegisterForm() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<RegisterData>({
         resolver: zodResolver(registerSchema),
+        mode: "onSubmit",
     });
 
-    const onSubmit = async () => {
-        await new Promise((r) => setTimeout(r, 800));
-        router.push("/dashboard");
+    const [pending, startTransition] = useTransition();
+
+    const onSubmit = (data: RegisterData) => {
+        setError(null);
+
+        startTransition(async () => {
+            try {
+                const response = await handleRegister(data);
+                if (response.success) {
+                    router.push("/login");
+                } else {
+                    setError(response.message || "Registration failed");
+                }
+            } catch (err: any) {
+                setError(err.message || "Something went wrong during registration");
+            }
+        });
     };
+
+    const isLoading = isSubmitting || pending;
 
     return (
         <div>
             {/* Welcome heading */}
             <div className="mb-8">
-                <h1 className="text-4xl font-serif text-[#6B4E4E] mb-2">
-                    Welcome!
-                </h1>
-                <p className="text-sm text-[#9A7A7A]">
-                    Sign up to continue
-                </p>
+                <h1 className="text-4xl font-serif text-[#6B4E4E] mb-2">Welcome!</h1>
+                <p className="text-sm text-[#9A7A7A]">Sign up to continue</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                {/* First Name field */}
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                        First Name
-                    </label>
-                    <div className="relative">
+                {error && <p className="text-sm text-rose-400 text-center">{error}</p>}
+
+                {/* First & Last Name – grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-2">First Name</label>
                         <input
                             {...register("firstName")}
                             type="text"
                             placeholder="Enter your first name"
-                            className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
                         />
+                        {errors.firstName && <p className="text-xs text-rose-400 mt-1">{errors.firstName.message}</p>}
                     </div>
-                    {errors.firstName && (
-                        <p className="text-xs text-rose-400 mt-1">{errors.firstName.message}</p>
-                    )}
-                </div>
 
-                {/* Last Name field */}
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                        Last Name
-                    </label>
-                    <div className="relative">
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-2">Last Name</label>
                         <input
                             {...register("lastName")}
                             type="text"
                             placeholder="Enter your last name"
-                            className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
                         />
+                        {errors.lastName && <p className="text-xs text-rose-400 mt-1">{errors.lastName.message}</p>}
                     </div>
-                    {errors.lastName && (
-                        <p className="text-xs text-rose-400 mt-1">{errors.lastName.message}</p>
-                    )}
                 </div>
 
-                {/* Email field */}
+                {/* Email */}
                 <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                        E-mail
-                    </label>
-                    <div className="relative">
-                        <input
-                            {...register("email")}
-                            type="email"
-                            placeholder="Enter your e-mail"
-                            className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
-                        />
-                    </div>
-                    {errors.email && (
-                        <p className="text-xs text-rose-400 mt-1">{errors.email.message}</p>
-                    )}
+                    <label className="block text-sm text-gray-700 mb-2">E-mail</label>
+                    <input
+                        {...register("email")}
+                        type="email"
+                        placeholder="Enter your e-mail"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
+                    />
+                    {errors.email && <p className="text-xs text-rose-400 mt-1">{errors.email.message}</p>}
                 </div>
 
-                {/* Password field */}
+                {/* Username – added since your backend expects it */}
                 <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                        Password
-                    </label>
+                    <label className="block text-sm text-gray-700 mb-2">Username</label>
+                    <input
+                        {...register("username")}
+                        type="text"
+                        placeholder="Choose a username"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none transition-colors text-gray-700 placeholder:text-gray-400"
+                    />
+                    {errors.username && <p className="text-xs text-rose-400 mt-1">{errors.username.message}</p>}
+                </div>
+
+                {/* Password with toggle */}
+                <div>
+                    <label className="block text-sm text-gray-700 mb-2">Password</label>
                     <div className="relative">
                         <input
                             {...register("password")}
@@ -122,16 +132,12 @@ export default function RegisterForm() {
                             </svg>
                         </button>
                     </div>
-                    {errors.password && (
-                        <p className="text-xs text-rose-400 mt-1">{errors.password.message}</p>
-                    )}
+                    {errors.password && <p className="text-xs text-rose-400 mt-1">{errors.password.message}</p>}
                 </div>
 
-                {/* Repeat Password field */}
+                {/* Confirm Password with toggle */}
                 <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                        Confirm Password
-                    </label>
+                    <label className="block text-sm text-gray-700 mb-2">Confirm Password</label>
                     <div className="relative">
                         <input
                             {...register("confirmPassword")}
@@ -156,12 +162,10 @@ export default function RegisterForm() {
                             </svg>
                         </button>
                     </div>
-                    {errors.confirmPassword && (
-                        <p className="text-xs text-rose-400 mt-1">{errors.confirmPassword.message}</p>
-                    )}
+                    {errors.confirmPassword && <p className="text-xs text-rose-400 mt-1">{errors.confirmPassword.message}</p>}
                 </div>
 
-                {/* Remember me checkbox */}
+                {/* Remember me */}
                 <div className="flex items-center gap-2">
                     <input
                         type="checkbox"
@@ -170,18 +174,17 @@ export default function RegisterForm() {
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="w-4 h-4 rounded border-gray-300 text-[#E8B4B8] focus:ring-[#E8B4B8]"
                     />
-                    <label htmlFor="remember" className="text-sm text-[#9A7A7A]">
-                        Remember me
-                    </label>
+                    <label htmlFor="remember" className="text-sm text-[#9A7A7A]">Remember me</label>
                 </div>
 
-                {/* Sign up button */}
+                {/* Submit button */}
                 <button
                     type="submit"
-                    className="w-full py-3 rounded-full bg-[#E8B4B8] text-white font-medium
-                             hover:bg-[#D9A3A7] transition-all duration-300 shadow-md hover:shadow-lg"
+                    disabled={isLoading}
+                    className={`w-full py-3 rounded-full bg-[#E8B4B8] text-white font-medium hover:bg-[#D9A3A7] transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? "cursor-wait" : ""
+                        }`}
                 >
-                    SIGN UP
+                    {isLoading ? "SIGNING UP..." : "SIGN UP"}
                 </button>
 
                 {/* Login link */}
