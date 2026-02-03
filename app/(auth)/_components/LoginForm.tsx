@@ -26,17 +26,16 @@ export default function LoginForm() {
 
     const onSubmit = (data: LoginData) => {
         setError(null);
-
         startTransition(async () => {
             try {
                 const response = await handleLogin(data);
                 if (response.success) {
-                    router.push("/dashboard");
+                    router.push(response.redirectTo || "/dashboard"); // fallback
                 } else {
                     setError(response.message || "Login failed");
                 }
             } catch (err: any) {
-                setError(err.message || "Something went wrong during login");
+                setError(err.message || "Something went wrong");
             }
         });
     };
