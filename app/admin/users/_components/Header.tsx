@@ -1,16 +1,18 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { handleWhoAmI } from "@/lib/actions/auth-action";
+import { whoAmI } from "@/lib/api/auth"; // ← client version (with Cookies.get)
 import { handleLogout } from "@/lib/actions/auth-action";
 
 export default function Header() {
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        handleWhoAmI().then((res) => {
-            if (res.success) setUser(res.data);
-        });
+        whoAmI()
+            .then((res) => {
+                if (res.success) setUser(res.data);
+                else console.log("Header whoAmI failed:", res.message);
+            })
+            .catch((err) => console.log("Header whoAmI error:", err));
     }, []);
 
     return (

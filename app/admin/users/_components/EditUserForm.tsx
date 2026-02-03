@@ -143,25 +143,25 @@ export default function EditUserForm({ user }: { user: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm text-gray-700 mb-2">First Name</label>
-                    <input {...register("firstName")} className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
+                    <input {...register("firstName")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
                     {errors.firstName && <p className="text-xs text-rose-400 mt-1">{errors.firstName.message}</p>}
                 </div>
 
                 <div>
                     <label className="block text-sm text-gray-700 mb-2">Last Name</label>
-                    <input {...register("lastName")} className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
+                    <input {...register("lastName")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
                     {errors.lastName && <p className="text-xs text-rose-400 mt-1">{errors.lastName.message}</p>}
                 </div>
 
                 <div>
                     <label className="block text-sm text-gray-700 mb-2">Username</label>
-                    <input {...register("username")} className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
+                    <input {...register("username")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
                     {errors.username && <p className="text-xs text-rose-400 mt-1">{errors.username.message}</p>}
                 </div>
 
                 <div>
                     <label className="block text-sm text-gray-700 mb-2">Email</label>
-                    <input {...register("email")} type="email" className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
+                    <input {...register("email")} type="email" className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
                     {errors.email && <p className="text-xs text-rose-400 mt-1">{errors.email.message}</p>}
                 </div>
             </div>
