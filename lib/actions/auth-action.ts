@@ -1,8 +1,8 @@
 "use server";
 
-import { login, register, updateProfile, whoAmI } from "@/lib/api/auth";
+import { login, register, serverWhoAmI, updateProfile, whoAmI } from "@/lib/api/auth";
 import { LoginData, RegisterData } from "@/app/(auth)/schema/auth.schema";
-import { setAuthToken, setUserData, clearAuthCookies } from "@/lib/cookie";
+import { setAuthToken, setUserData, clearAuthCookies, getAuthToken } from "@/lib/cookie";
 import { redirect } from "next/navigation";
 
 export const handleRegister = async (data: RegisterData) => {
@@ -54,12 +54,13 @@ export const handleLogout = async () => {
 
 export async function handleWhoAmI() {
     try {
-        const result = await whoAmI();
+        const result = await serverWhoAmI(); // server-safe version
+
         if (result.success) {
-            // Optionally update cookie if backend returns fresh data
-            await setUserData(result.data);
+            // DO NOT setUserData here — only do it after login or update
             return { success: true, data: result.data };
         }
+
         return { success: false, message: result.message || "Failed to fetch user" };
     } catch (error: any) {
         return { success: false, message: error.message };
@@ -68,10 +69,14 @@ export async function handleWhoAmI() {
 
 export async function handleUpdateProfile(formData: FormData) {
     try {
-        const result = await updateProfile(formData);  // this comes from lib/api/auth.ts
+        const token = await getAuthToken();  // ← read token on server
+        if (!token) {
+            return { success: false, message: "No token provided - please log in again" };
+        }
+
+        const result = await updateProfile(formData, token); // ← pass token to api function
 
         if (result.success) {
-            // Update cookie with fresh user data
             await setUserData(result.data);
             return {
                 success: true,

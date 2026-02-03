@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
     const result = await handleWhoAmI();
+    console.log("[ProfilePage] whoAmI result:", result); //to debug
 
     if (!result.success || !result.data) {
+        console.log("[ProfilePage] Redirecting to login - reason:", result.message);
         redirect("/login");
     }
 
