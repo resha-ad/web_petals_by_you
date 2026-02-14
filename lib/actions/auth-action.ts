@@ -4,6 +4,7 @@ import { login, register, serverWhoAmI, updateProfile, whoAmI } from "@/lib/api/
 import { LoginData, RegisterData } from "@/app/(auth)/schema/auth.schema";
 import { setAuthToken, setUserData, clearAuthCookies, getAuthToken } from "@/lib/cookie";
 import { redirect } from "next/navigation";
+import axios from "../api/axios";
 
 export const handleRegister = async (data: RegisterData) => {
     try {
@@ -96,3 +97,30 @@ export async function handleUpdateProfile(formData: FormData) {
         };
     }
 }
+
+export const handleForgotPassword = async (email: string) => {
+    try {
+        const response = await axios.post("/api/auth/forgot-password", { email });
+        return response.data;
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to send reset email",
+        };
+    }
+};
+
+export const handleResetPassword = async (token: string, newPassword: string) => {
+    try {
+        const response = await axios.post("/api/auth/reset-password", {
+            token,
+            newPassword,
+        });
+        return response.data;
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error.response?.data?.message || "Password reset failed",
+        };
+    }
+};
