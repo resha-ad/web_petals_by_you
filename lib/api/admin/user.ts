@@ -22,14 +22,13 @@ export const createUser = async (formData: FormData) => {
     }
 };
 
-export const getAllUsers = async () => {
+export const getAllUsers = async (query = "") => {
     try {
         const headers = await getHeaders();
-        console.log("[getAllUsers] Headers sent:", headers);
-        const response = await axios.get(API.ADMIN.USERS.LIST, headers);
+        const url = query ? `${API.ADMIN.USERS.LIST}?${query}` : API.ADMIN.USERS.LIST;
+        const response = await axios.get(url, headers);
         return response.data;
     } catch (error: any) {
-        console.log("[getAllUsers] Error:", error.message, error.response?.data);
         throw new Error(error.response?.data?.message || "Failed to fetch users");
     }
 };
