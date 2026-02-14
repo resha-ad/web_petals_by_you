@@ -24,10 +24,15 @@ export const handleCreateUser = async (formData: FormData) => {
 };
 
 // List all
-export const handleGetAllUsers = async () => {
+export const handleGetAllUsers = async (page = 1, size = 10, search?: string) => {
     try {
-        const response = await getAllUsers();
-        return { success: true, data: response.data || [] };
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("size", size.toString());
+        if (search) params.append("search", search);
+
+        const response = await getAllUsers(params.toString()); // pass query string
+        return { success: true, data: response.data || [], pagination: response.pagination };
     } catch (err: any) {
         return { success: false, message: err.message || "Failed to fetch users" };
     }

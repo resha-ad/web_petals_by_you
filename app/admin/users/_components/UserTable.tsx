@@ -1,9 +1,8 @@
-// app/admin/users/_components/UserTable.tsx
 "use client";
-
 import Link from "next/link";
 import { handleDeleteUser } from "@/lib/actions/admin/user-action";
 import { toast } from "react-toastify";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type User = {
     _id: string;
@@ -14,23 +13,44 @@ type User = {
     role: string;
 };
 
-export default function UserTable({ users }: { users: User[] }) {
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this user?")) return;
+type UserTableProps = {
+    users: User[];
+    pagination?: {
+        page: number;
+        size: number;
+        totalItems: number;
+        totalPages: number;
+    };
+};
 
+export default function UserTable({ users, pagination }: UserTableProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const currentPage = Number(searchParams.get("page")) || 1;
+    const currentSize = Number(searchParams.get("size")) || 10;
+    const currentSearch = searchParams.get("search") || "";
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
         const res = await handleDeleteUser(id);
         if (res.success) {
             toast.success("User deleted successfully");
-            // Simple refresh (you can later use router.refresh() or mutate)
-            window.location.reload();
+            router.refresh(); // re-fetch current page
         } else {
             toast.error(res.message || "Failed to delete user");
         }
     };
 
+    const changePage = (newPage: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        router.push(`/admin/users?${params.toString()}`);
+    };
+
     return (
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-rose-100">
-            <table className="w-full text-left">
+        <div className="overflow-x-auto">
+            <table className="w-full text-left bg-white rounded-2xl shadow-xl border border-rose-100">
                 <thead className="bg-[#F3E6E6]">
                     <tr>
                         <th className="px-8 py-5 text-sm font-medium text-[#6B4E4E]">Name</th>
@@ -65,7 +85,7 @@ export default function UserTable({ users }: { users: User[] }) {
                                         {user.role}
                                     </span>
                                 </td>
-                                <td className="px-8 py-6 flex gap-5">
+                                <td className="px-8 py-6 flex gap-6">
                                     <Link
                                         href={`/admin/users/${user._id}`}
                                         className="text-[#6B4E4E] hover:text-[#E8B4B8] font-medium"
@@ -90,6 +110,31 @@ export default function UserTable({ users }: { users: User[] }) {
                     )}
                 </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {pagination && pagination.totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center gap-6">
+                    <button
+                        onClick={() => changePage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-6 py-3 rounded-full bg-[#E8B4B8]/20 text-[#6B4E4E] disabled:opacity-40 hover:bg-[#E8B4B8]/30 transition disabled:cursor-not-allowed"
+                    >
+                        Previous
+                    </button>
+
+                    <span className="text-base font-medium text-[#6B4E4E]">
+                        Page {currentPage} of {pagination.totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => changePage(currentPage + 1)}
+                        disabled={currentPage === pagination.totalPages}
+                        className="px-6 py-3 rounded-full bg-[#E8B4B8]/20 text-[#6B4E4E] disabled:opacity-40 hover:bg-[#E8B4B8]/30 transition disabled:cursor-not-allowed"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
