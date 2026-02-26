@@ -1,14 +1,14 @@
-// lib/api/cart.ts
+
 "use server";
 
 import axios from "./axios";
+
 
 export async function getCart() {
     try {
         const res = await axios.get("/api/cart");
         return res.data;
     } catch (err: any) {
-        console.error("[getCart]", err?.response?.data || err.message);
         throw new Error(err?.response?.data?.message || "Failed to fetch cart");
     }
 }
@@ -37,5 +37,14 @@ export async function clearCart() {
         return res.data;
     } catch (err: any) {
         throw new Error(err?.response?.data?.message || "Failed to clear cart");
+    }
+}
+
+export async function addToCart(itemId: string, quantity: number = 1) {
+    try {
+        const res = await axios.post("/api/cart/add-product", { itemId, quantity });
+        return res.data;
+    } catch (err: any) {
+        throw new Error(err?.response?.data?.message || "Failed to add to cart");
     }
 }

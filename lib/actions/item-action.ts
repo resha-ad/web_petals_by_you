@@ -66,7 +66,7 @@ export async function handleGetAllItems(page: number = 1, limit: number = 10, se
                 success: true,
                 data: {
                     items: response.data?.items || [],
-                    pagination: response.pagination || {
+                    pagination: response.data?.pagination || {  // ← changed here
                         page,
                         limit,
                         total: 0,

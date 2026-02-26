@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ADMIN_LINKS = [
-    { href: "/admin", label: "Dashboard" },
-    { href: "/admin/users", label: "Users" },
-    // Add more links later (e.g. Products, Orders)
+    { href: "/admin", label: "Dashboard", icon: "🏠" },
+    { href: "/admin/users", label: "Users", icon: "👥" },
+    { href: "/admin/items", label: "Items", icon: "🌸" },
 ];
 
 export default function Sidebar() {
@@ -32,8 +32,8 @@ export default function Sidebar() {
                         key={link.href}
                         href={link.href}
                         className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive(link.href)
-                                ? "bg-[#E8B4B8]/20 text-[#6B4E4E]"
-                                : "text-[#9A7A7A] hover:bg-[#F9F5F5] hover:text-[#6B4E4E]"
+                            ? "bg-[#E8B4B8]/20 text-[#6B4E4E]"
+                            : "text-[#9A7A7A] hover:bg-[#F9F5F5] hover:text-[#6B4E4E]"
                             }`}
                     >
                         {link.label}

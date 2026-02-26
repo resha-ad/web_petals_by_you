@@ -11,6 +11,15 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 const MAX_IMAGES = 5;
 
+const CATEGORIES = [
+    { value: "", label: "Select a Category" },
+    { value: "bouquets", label: "Bouquets" },
+    { value: "flowers", label: "Flowers" },
+    { value: "arrangements", label: "Arrangements" },
+    { value: "gifts", label: "Gift Sets" },
+    { value: "others", label: "Others" },
+];
+
 const itemSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
@@ -42,7 +51,7 @@ const itemSchema = z.object({
 type ItemFormData = z.infer<typeof itemSchema>;
 
 type EditItemFormProps = {
-    initialData: any; // Full item from backend
+    initialData: any;
     onSubmit: (data: FormData) => Promise<{ success: boolean; message?: string }>;
     buttonText: string;
 };
@@ -62,8 +71,8 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
             discountPrice: initialData?.discountPrice ?? null,
             category: initialData?.category || "",
             stock: initialData?.stock || 0,
-            isFeatured: initialData?.isFeatured || false,
-            preparationTime: initialData?.preparationTime ?? undefined,
+            isFeatured: initialData?.isFeatured ?? false,
+            preparationTime: initialData?.preparationTime ?? null,
             newImages: [],
         },
         mode: "onChange",
@@ -90,21 +99,13 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
     };
 
     const removeExistingImage = (imgPath: string, index: number) => {
-        console.log("Removing existing image at index:", index, "path:", imgPath);
-
-        // Remove from existingImages array
         const newExisting = existingImages.filter((_, i) => i !== index);
         setExistingImages(newExisting);
-
-        // Add to removed list for backend
         setRemovedImages((prev) => [...prev, imgPath]);
-
-        // Remove from previews using the same index
         setPreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
     const onValidSubmit = (data: ItemFormData) => {
-        // Manual total images validation
         const totalImages = existingImages.length + (data.newImages?.length || 0);
         if (totalImages > MAX_IMAGES) {
             toast.error(`Maximum ${MAX_IMAGES} images allowed (existing + new)`);
@@ -114,7 +115,6 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
         startTransition(async () => {
             const formData = new FormData();
 
-            // Append all fields
             formData.append("name", data.name);
             formData.append("description", data.description);
             formData.append("price", data.price.toString());
@@ -123,7 +123,12 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
             }
             if (data.category) formData.append("category", data.category);
             formData.append("stock", data.stock.toString());
-            formData.append("isFeatured", data.isFeatured.toString());
+
+            // ✅ Fix: send "1" or "0" instead of "true"/"false"
+            // z.coerce.boolean() treats "false" as true (truthy string),
+            // but correctly maps 0 → false and 1 → true
+            formData.append("isFeatured", data.isFeatured ? "1" : "0");
+
             if (data.preparationTime !== undefined) {
                 formData.append("preparationTime", data.preparationTime.toString());
             }
@@ -138,15 +143,10 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
                 formData.append("existingImages", img);
             });
 
-            // Removed images (for backend to know which to delete)
+            // Removed images
             removedImages.forEach((img) => {
                 formData.append("removedImages", img);
             });
-
-            console.log("Submitting formData:");
-            console.log("existingImages:", existingImages);
-            console.log("removedImages:", removedImages);
-            console.log("newImages count:", data.newImages?.length || 0);
 
             const res = await onSubmit(formData);
             if (res.success) {
@@ -208,11 +208,17 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Category</label>
-                    <input
+                    <select
                         {...register("category")}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-[#6B4E4E] focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none"
-                        placeholder="e.g. Roses, Bouquets, Ribbons"
-                    />
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-[#6B4E4E] focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none bg-white"
+                    >
+                        {CATEGORIES.map((cat) => (
+                            <option key={cat.value} value={cat.value}>
+                                {cat.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
                 </div>
                 <div>
                     <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Stock</label>
@@ -277,7 +283,6 @@ export default function EditItemForm({ initialData, onSubmit, buttonText }: Edit
                         {previews.map((src, idx) => (
                             <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm">
                                 <img src={src} alt={`preview ${idx}`} className="object-cover w-full h-full" />
-                                {/* Remove button – only for existing images */}
                                 {idx < existingImages.length && (
                                     <button
                                         type="button"

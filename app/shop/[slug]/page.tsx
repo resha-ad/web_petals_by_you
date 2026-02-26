@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ItemGallery from "@/app/_components/ItemGallery";
+import AddToCartButton from "@/app/_components/AddToCartButton";
 
 export default async function ItemDetailPage({
     params,
@@ -135,33 +136,36 @@ export default async function ItemDetailPage({
                                 </div>
                             </div>
 
-                            {/* CTA buttons */}
-                            <div className="flex flex-col sm:flex-row gap-3 mt-auto">
-                                <button
-                                    disabled={isOutOfStock}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-full text-sm font-medium tracking-wide transition-all duration-300 ${isOutOfStock
-                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        : "bg-[#6B4E4E] text-white hover:bg-[#5a3f3f] hover:shadow-lg hover:shadow-rose-200/50 active:scale-95"
-                                        }`}
-                                >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                                    </svg>
-                                    {isOutOfStock ? "Out of Stock" : "Add to Cart"}
-                                </button>
+                            {/* ── CTA row ── */}
+                            <div className="mt-auto">
+                                {/*                                 
+                                    Layout:
+                                    [  qty − n +  ][   Add to Cart / Added   ]  [♡]
+                                    AddToCartButton handles the first two columns internally.
+                                    The favorites icon button sits alongside at the same height.
+                                */}
+                                <div className="flex items-center gap-3">
+                                    <AddToCartButton itemId={item._id} isOutOfStock={isOutOfStock} />
 
-                                <button
-                                    disabled={isOutOfStock}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-full text-sm font-medium tracking-wide border transition-all duration-300 ${isOutOfStock
-                                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                                        : "border-[#E8B4B8] text-[#6B4E4E] hover:bg-[#F3E6E6] active:scale-95"
-                                        }`}
-                                >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-                                    </svg>
-                                    Save to Favorites
-                                </button>
+                                    {/* Favorites — icon-only pill, same height as ATC */}
+                                    <button
+                                        type="button"
+                                        title="Save to Favorites"
+                                        className={`
+                                            flex-shrink-0 flex items-center justify-center
+                                            w-[46px] h-[46px] rounded-full border transition-all duration-200
+                                            ${isOutOfStock
+                                                ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                                                : "border-[#E8C4C4] text-[#C4878A] hover:bg-[#FDF0F0] hover:border-[#D4A0A0] active:scale-95"
+                                            }
+                                        `}
+                                        disabled={isOutOfStock}
+                                    >
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Trust strip */}
