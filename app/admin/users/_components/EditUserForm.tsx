@@ -1,177 +1,265 @@
+// app/_components/EditItemForm.tsx
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "react-toastify";
-import { handleUpdateUser } from "@/lib/actions/admin/user-action";
 import { z } from "zod";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 
-const editUserSchema = z.object({
-    firstName: z.string().min(1, "First name required"),
-    lastName: z.string().min(1, "Last name required"),
-    username: z.string().min(3, "Username min 3 characters"),
-    email: z.string().email("Invalid email"),
-    image: z
-        .instanceof(File)
+const itemSchema = z.object({
+    name: z.string().min(3, "Name must be at least 3 characters"),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    price: z.coerce.number().positive("Price must be a positive number"),
+    discountPrice: z.coerce
+        .number()
+        .nonnegative("Discount price cannot be negative")
+        .nullable()
+        .optional(),
+    category: z.string().optional(),
+    stock: z.coerce.number().int().nonnegative("Stock must be non-negative").default(0),
+    isFeatured: z.boolean().default(false),
+    preparationTime: z.coerce
+        .number()
+        .int()
+        .nonnegative("Preparation time must be non-negative")
+        .optional(),
+    images: z
+        .array(z.instanceof(File))
+        .refine((files) => files.every((f) => f.size <= MAX_FILE_SIZE), "Each image max 5MB")
+        .refine(
+            (files) => files.every((f) => ACCEPTED_IMAGE_TYPES.includes(f.type as any)),
+            "Only .jpg, .jpeg, .png, .webp allowed"
+        )
         .optional()
-        .refine((f) => !f || f.size <= MAX_FILE_SIZE, "Max 5MB")
-        .refine((f) => !f || ACCEPTED_IMAGE_TYPES.includes(f.type), "Only jpg/png/webp"),
+        .default([]),
 });
 
-type EditUserData = z.infer<typeof editUserSchema>;
+type ItemFormData = z.infer<typeof itemSchema>;
 
-export default function EditUserForm({ user }: { user: any }) {
+type EditItemFormProps = {
+    initialData: any; // Full item from backend
+    onSubmit: (data: FormData) => Promise<{ success: boolean; message?: string }>;
+    buttonText: string;
+};
+
+export default function EditItemForm({ initialData, onSubmit, buttonText }: EditItemFormProps) {
     const [pending, startTransition] = useTransition();
-    const [preview, setPreview] = useState<string | null>(user?.imageUrl || null);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const [previews, setPreviews] = useState<string[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>(initialData.images || []);
 
-    const {
-        register,
-        handleSubmit,
-        control,
-        setValue,
-        formState: { errors },
-    } = useForm<EditUserData>({
-        resolver: zodResolver(editUserSchema),
+    const form = useForm<ItemFormData>({
+        resolver: zodResolver(itemSchema) as any,
         defaultValues: {
-            firstName: user?.firstName || "",
-            lastName: user?.lastName || "",
-            username: user?.username || "",
-            email: user?.email || "",
+            name: initialData.name || "",
+            description: initialData.description || "",
+            price: initialData.price || 0,
+            discountPrice: initialData.discountPrice ?? null,
+            category: initialData.category || "",
+            stock: initialData.stock || 0,
+            isFeatured: initialData.isFeatured || false,
+            preparationTime: initialData.preparationTime ?? undefined,
+            images: [], // only new uploads
         },
+        mode: "onChange",
     });
 
-    useEffect(() => {
-        if (user?.imageUrl) {
-            setPreview(`${process.env.NEXT_PUBLIC_API_BASE_URL}${user.imageUrl}`);
-        }
-    }, [user]);
+    const { register, handleSubmit, setValue, formState: { errors } } = form;
 
-    const handleImageChange = (file: File | undefined) => {
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result as string);
-            reader.readAsDataURL(file);
-            setValue("image", file, { shouldValidate: true });
-        } else {
-            setPreview(user?.imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.imageUrl}` : null);
-            setValue("image", undefined);
+    // Initialize image previews from existing backend images
+    useEffect(() => {
+        if (initialData.images?.length > 0) {
+            const urls = initialData.images.map((img: string) =>
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}${img}`
+            );
+            setPreviews(urls);
         }
+    }, [initialData.images]);
+
+    const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setValue("images", files, { shouldValidate: true });
+
+        const newUrls = files.map((file) => URL.createObjectURL(file));
+        setPreviews((prev) => [...prev, ...newUrls]);
+
+        // Cleanup old URLs
+        return () => newUrls.forEach(URL.revokeObjectURL);
     };
 
-    const onSubmit = (data: EditUserData) => {
+    const onValidSubmit = (data: ItemFormData) => {
         startTransition(async () => {
             const formData = new FormData();
-            formData.append("firstName", data.firstName);
-            formData.append("lastName", data.lastName);
-            formData.append("username", data.username);
-            formData.append("email", data.email);
-            if (data.image) {
-                formData.append("image", data.image);
+
+            // Append all fields
+            formData.append("name", data.name);
+            formData.append("description", data.description);
+            formData.append("price", data.price.toString());
+            if (data.discountPrice !== null && data.discountPrice !== undefined) {
+                formData.append("discountPrice", data.discountPrice.toString());
+            }
+            if (data.category) formData.append("category", data.category);
+            formData.append("stock", data.stock.toString());
+            formData.append("isFeatured", data.isFeatured.toString());
+            if (data.preparationTime !== undefined) {
+                formData.append("preparationTime", data.preparationTime.toString());
             }
 
-            const res = await handleUpdateUser(user._id, formData);
+            // New uploaded images
+            data.images?.forEach((file) => {
+                formData.append("images", file);
+            });
+
+            // Keep existing images (so backend can merge)
+            existingImages.forEach((img) => {
+                formData.append("existingImages", img);
+            });
+
+            const res = await onSubmit(formData);
             if (res.success) {
-                toast.success("User updated successfully");
-                if (fileRef.current) fileRef.current.value = "";
+                toast.success("Item updated successfully!");
             } else {
-                toast.error(res.message || "Update failed");
+                toast.error(res.message || "Failed to update item");
             }
         });
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Image preview */}
-            <div className="flex items-center gap-4">
-                {preview ? (
-                    <div className="relative">
-                        <img
-                            src={preview}
-                            alt="Current or preview"
-                            className="w-24 h-24 rounded-full object-cover border-2 border-[#E8B4B8]/30"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => handleImageChange(undefined)}
-                            className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow"
-                        >
-                            ×
-                        </button>
-                    </div>
-                ) : (
-                    <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-                        No image
-                    </div>
-                )}
-            </div>
-
-            {/* File input */}
+        <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
+            {/* Name */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Change Profile Image (optional)
-                </label>
-                <Controller
-                    name="image"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                        <input
-                            ref={fileRef}
-                            type="file"
-                            accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                handleImageChange(file);
-                                onChange(file);
-                            }}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#E8B4B8]/20 file:text-[#6B4E4E] hover:file:bg-[#E8B4B8]/30 cursor-pointer"
-                        />
-                    )}
+                <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Name *</label>
+                <input
+                    {...register("name")}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
                 />
-                {errors.image && (
-                    <p className="text-xs text-rose-500 mt-1 font-medium">
-                        {errors.image.message}
-                    </p>
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+            </div>
+
+            {/* Description */}
+            <div>
+                <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Description *</label>
+                <textarea
+                    {...register("description")}
+                    rows={5}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                />
+                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+            </div>
+
+            {/* Price & Discount */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Price (NPR) *</label>
+                    <input
+                        type="number"
+                        step="1"
+                        {...register("price", { valueAsNumber: true })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                    />
+                    {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                </div>
+                <div>
+                    <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Discount Price (NPR)</label>
+                    <input
+                        type="number"
+                        step="1"
+                        {...register("discountPrice", { valueAsNumber: true })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                    />
+                    {errors.discountPrice && <p className="text-red-500 text-sm mt-1">{errors.discountPrice.message}</p>}
+                </div>
+            </div>
+
+            {/* Category & Stock */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Category</label>
+                    <input
+                        {...register("category")}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                        placeholder="e.g. Roses, Bouquets, Wedding, Ribbons"
+                    />
+                </div>
+                <div>
+                    <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Stock</label>
+                    <input
+                        type="number"
+                        {...register("stock", { valueAsNumber: true })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                    />
+                </div>
+            </div>
+
+            {/* Preparation Time */}
+            <div>
+                <label className="block mb-1 text-sm font-medium text-[#6B4E4E]">Preparation Time (minutes)</label>
+                <input
+                    type="number"
+                    step="1"
+                    {...register("preparationTime", { valueAsNumber: true })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none text-[#6B4E4E]"
+                    placeholder="e.g. 30"
+                />
+                {errors.preparationTime && <p className="text-red-500 text-sm mt-1">{errors.preparationTime.message}</p>}
+            </div>
+
+            {/* Featured Checkbox */}
+            <div className="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    id="isFeatured"
+                    {...register("isFeatured")}
+                    className="h-4 w-4 text-[#E8B4B8] focus:ring-[#E8B4B8] border-gray-300 rounded"
+                />
+                <label htmlFor="isFeatured" className="text-sm font-medium text-[#6B4E4E]">
+                    Mark as Featured
+                </label>
+            </div>
+
+            {/* Images */}
+            <div>
+                <label className="block mb-2 text-sm font-medium text-[#6B4E4E]">
+                    Images (existing + new uploads)
+                </label>
+                <input
+                    type="file"
+                    multiple
+                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                    onChange={handleFilesChange}
+                    className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2.5 file:px-5
+            file:rounded-lg file:border-0
+            file:text-sm file:font-medium
+            file:bg-[#E8B4B8]/10 file:text-[#6B4E4E]
+            hover:file:bg-[#E8B4B8]/20 cursor-pointer"
+                />
+                {errors.images && (
+                    <p className="text-red-500 text-sm mt-1">{errors.images.message?.toString()}</p>
+                )}
+
+                {/* Preview - existing + new */}
+                {previews.length > 0 && (
+                    <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                        {previews.map((src, idx) => (
+                            <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                <img src={src} alt={`preview ${idx}`} className="object-cover w-full h-full" />
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
 
-            {/* Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">First Name</label>
-                    <input {...register("firstName")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
-                    {errors.firstName && <p className="text-xs text-rose-400 mt-1">{errors.firstName.message}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">Last Name</label>
-                    <input {...register("lastName")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
-                    {errors.lastName && <p className="text-xs text-rose-400 mt-1">{errors.lastName.message}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">Username</label>
-                    <input {...register("username")} className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
-                    {errors.username && <p className="text-xs text-rose-400 mt-1">{errors.username.message}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm text-gray-700 mb-2">Email</label>
-                    <input {...register("email")} type="email" className="w-full px-4 py-3 text-[#6B4E4E] rounded-lg border border-gray-200 focus:border-[#E8B4B8] outline-none" />
-                    {errors.email && <p className="text-xs text-rose-400 mt-1">{errors.email.message}</p>}
-                </div>
-            </div>
-
+            {/* Submit */}
             <button
                 type="submit"
                 disabled={pending}
-                className="w-full py-3 rounded-full bg-[#E8B4B8] text-white font-medium hover:bg-[#D9A3A7] disabled:opacity-50 transition"
+                className="w-full py-3.5 bg-[#E8B4B8] text-white font-medium rounded-full hover:bg-[#d9a3a7] transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-                {pending ? "Updating..." : "Update User"}
+                {pending ? "Updating..." : buttonText}
             </button>
         </form>
     );
