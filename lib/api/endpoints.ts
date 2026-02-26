@@ -22,4 +22,10 @@ export const API = {
         UPDATE: (id: string) => `/api/items/${id}`,
         DELETE: (id: string) => `/api/items/${id}`,
     },
+    CART: {
+        GET: "/api/cart",
+        UPDATE_QUANTITY: "/api/cart/update-quantity",
+        REMOVE: (refId: string) => `/api/cart/remove/${refId}`,
+        CLEAR: "/api/cart/clear",
+    },
 };
