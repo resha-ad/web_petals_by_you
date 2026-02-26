@@ -5,68 +5,140 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/_contexts/AuthContext";
 import router from "next/router";
+import { addCustomBouquetToCartAction } from "@/lib/actions/custom-bouquet-actions";
+import { toast } from "react-toastify";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
 const FLOWERS = [
     {
-        id: "rose", name: "Rose", tagline: "Classic & romantic", price: 120, color: "#F9A8D4", shadowColor: "#f472b640",
-        img: "https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400&q=85",
+        id: "rose",
+        name: "Rose",
+        tagline: "Classic & romantic",
+        price: 120,
+        color: "#F9A8D4",
+        shadowColor: "#f472b640",
+        img: "/images/singlerose.jpg",
     },
     {
-        id: "tulip", name: "Tulip", tagline: "Elegant & graceful", price: 90, color: "#FCA5A5", shadowColor: "#fb923c40",
-        img: "https://images.unsplash.com/photo-1520763185298-1b434c919102?w=400&q=85",
+        id: "tulip",
+        name: "Tulip",
+        tagline: "Elegant & graceful",
+        price: 90,
+        color: "#FCA5A5",
+        shadowColor: "#fb923c40",
+        img: "/images/singletulip.jpg",
     },
     {
-        id: "sunflower", name: "Sunflower", tagline: "Bright & cheerful", price: 80, color: "#FDE68A", shadowColor: "#fbbf2440",
-        img: "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&q=85",
+        id: "sunflower",
+        name: "Sunflower",
+        tagline: "Bright & cheerful",
+        price: 80,
+        color: "#FDE68A",
+        shadowColor: "#fbbf2440",
+        img: "/images/singlesunflower2.jpg",
     },
     {
-        id: "lily", name: "Lily", tagline: "Pure & serene", price: 110, color: "#C4B5FD", shadowColor: "#a78bfa40",
-        img: "https://images.unsplash.com/photo-1468327768560-75b778cbb551?w=400&q=85",
+        id: "lily",
+        name: "Lily",
+        tagline: "Pure & serene",
+        price: 110,
+        color: "#C4B5FD",
+        shadowColor: "#a78bfa40",
+        img: "/images/singlelily.jpg",
     },
     {
-        id: "daisy", name: "Daisy", tagline: "Sweet & playful", price: 70, color: "#FEF08A", shadowColor: "#facc1540",
-        img: "https://images.unsplash.com/photo-1490750967868-88df5691cc13?w=400&q=85",
+        id: "daisy",
+        name: "Daisy",
+        tagline: "Sweet & playful",
+        price: 70,
+        color: "#FEF08A",
+        shadowColor: "#facc1540",
+        img: "/images/singledaisy2.jpg",
     },
     {
-        id: "orchid", name: "Orchid", tagline: "Exotic & mysterious", price: 180, color: "#E879F9", shadowColor: "#d946ef40",
-        img: "https://images.unsplash.com/photo-1566907568745-37d2c56ada0b?w=400&q=85",
+        id: "orchid",
+        name: "Orchid",
+        tagline: "Exotic & mysterious",
+        price: 180,
+        color: "#E879F9",
+        shadowColor: "#d946ef40",
+        img: "/images/singleorchid.jpg",
     },
     {
-        id: "peony", name: "Peony", tagline: "Lush & romantic", price: 150, color: "#FCA5A5", shadowColor: "#f4366040",
-        img: "https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?w=400&q=85",
+        id: "peony",
+        name: "Peony",
+        tagline: "Lush & romantic",
+        price: 150,
+        color: "#FCA5A5",
+        shadowColor: "#f4366040",
+        img: "/images/singlepeony4.jpg",
     },
     {
-        id: "lavender", name: "Lavender", tagline: "Calm & fragrant", price: 85, color: "#A78BFA", shadowColor: "#818cf840",
-        img: "https://images.unsplash.com/photo-1471086569966-db3eebc25a59?w=400&q=85",
+        id: "lavender",
+        name: "Lavender",
+        tagline: "Calm & fragrant",
+        price: 85,
+        color: "#A78BFA",
+        shadowColor: "#818cf840",
+        img: "/images/singlelavender2.jpg",
     },
 ];
 
 const WRAPPINGS = [
     {
-        id: "kraft", name: "Kraft Paper", tagline: "Rustic & natural", price: 50, color: "#D4A574", darkColor: "#92400e",
-        img: "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&q=85",
+        id: "kraft",
+        name: "Kraft Paper",
+        tagline: "Rustic & natural",
+        price: 50,
+        color: "#D4A574",
+        darkColor: "#92400e",
+        img: "/images/kraft.jpg",
     },
     {
-        id: "silk", name: "Silk Ribbon", tagline: "Elegant & luxurious", price: 120, color: "#F9A8D4", darkColor: "#9d174d",
-        img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=85",
+        id: "silk",
+        name: "Silk Ribbon",
+        tagline: "Elegant & luxurious",
+        price: 120,
+        color: "#F9A8D4",
+        darkColor: "#9d174d",
+        img: "/images/silk.jpg",
     },
     {
-        id: "burlap", name: "Burlap & Twine", tagline: "Earthy & charming", price: 70, color: "#A3B899", darkColor: "#14532d",
-        img: "https://images.unsplash.com/photo-1487530811015-780780169f42?w=400&q=85",
+        id: "burlap",
+        name: "Burlap & Twine",
+        tagline: "Earthy & charming",
+        price: 70,
+        color: "#A3B899",
+        darkColor: "#14532d",
+        img: "/images/burlap.jpg",
     },
     {
-        id: "velvet", name: "Velvet Wrap", tagline: "Rich & opulent", price: 150, color: "#A78BFA", darkColor: "#4c1d95",
-        img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=85",
+        id: "velvet",
+        name: "Velvet Wrap",
+        tagline: "Rich & opulent",
+        price: 150,
+        color: "#A78BFA",
+        darkColor: "#4c1d95",
+        img: "/images/velvet.jpg",
     },
     {
-        id: "lace", name: "Lace & Pearl", tagline: "Romantic & delicate", price: 130, color: "#FDF4FF", darkColor: "#701a75",
-        img: "https://images.unsplash.com/photo-1522413452208-996ff3f3e740?w=400&q=85",
+        id: "lace",
+        name: "Lace & Pearl",
+        tagline: "Romantic & delicate",
+        price: 130,
+        color: "#FDF4FF",
+        darkColor: "#701a75",
+        img: "/images/lace.jpg",
     },
     {
-        id: "minimal", name: "Minimal White", tagline: "Clean & modern", price: 40, color: "#F1F5F9", darkColor: "#334155",
-        img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=85",
+        id: "minimal",
+        name: "Minimal White",
+        tagline: "Clean & modern",
+        price: 40,
+        color: "#F1F5F9",
+        darkColor: "#334155",
+        img: "/images/white.jpg",
     },
 ];
 
@@ -649,7 +721,7 @@ function StepReview({ bouquet, onSubmit, isSubmitting, isSuccess }: {
         return (
             <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="relative w-28 h-28 rounded-full overflow-hidden mb-6 shadow-xl shadow-rose-100 animate-bounce">
-                    <Image src="https://images.unsplash.com/photo-1487530811015-780780169f42?w=300&q=80" alt="bouquet" fill className="object-cover" />
+                    <Image src="/images/placeholder.jpg" alt="bouquet" fill className="object-cover" />
                     <div className="absolute inset-0 bg-[#E8B4B8]/30" />
                 </div>
                 <h2 className="text-3xl font-serif text-[#6B4E4E] mb-3">Added to Cart!</h2>
@@ -751,9 +823,8 @@ export default function BouquetBuilder() {
             return { ...prev, flowers: [...prev.flowers, { id, count: 3 }] };
         });
     };
-
     const router = useRouter();
-    const { isAuthenticated } = useAuth(); // already protected, but good to have
+    const { isAuthenticated } = useAuth();
 
     const handleSubmit = async () => {
         if (!isAuthenticated) {
@@ -762,50 +833,50 @@ export default function BouquetBuilder() {
         }
 
         setIsSubmitting(true);
+
         try {
             const payload = {
-                flowers: bouquet.flowers.map((sel) => ({
-                    flowerId: sel.id,
-                    name: FLOWERS.find((f) => f.id === sel.id)?.name,
-                    count: sel.count,
-                    pricePerStem: FLOWERS.find((f) => f.id === sel.id)?.price,
-                })),
-                wrapping: {
-                    id: bouquet.wrapping,
-                    name: WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.name,
-                    price: WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.price,
-                },
-                note: bouquet.note,
-                recipientName: bouquet.recipientName,
+                flowers: bouquet.flowers.map((sel) => {
+                    const f = FLOWERS.find((fl) => fl.id === sel.id)!;
+                    return {
+                        flowerId: sel.id,
+                        name: f.name,
+                        count: sel.count,
+                        pricePerStem: f.price,
+                    };
+                }),
+                wrapping: bouquet.wrapping
+                    ? {
+                        id: bouquet.wrapping,
+                        name: WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.name || "",
+                        price: WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.price || 0,
+                    }
+                    : null,
+                note: bouquet.note.trim(),
+                recipientName: bouquet.recipientName.trim(),
                 totalPrice:
                     bouquet.flowers.reduce((sum, sel) => {
                         const f = FLOWERS.find((fl) => fl.id === sel.id);
                         return sum + (f ? f.price * sel.count : 0);
-                    }, 0) + (WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.price ?? 0),
+                    }, 0) +
+                    (WRAPPINGS.find((w) => w.id === bouquet.wrapping)?.price || 0),
             };
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/custom-bouquets`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(payload),
-            });
+            const result = await addCustomBouquetToCartAction(payload);
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.message || "Failed to add custom bouquet to cart");
+            if (result.success) {
+                setIsSuccess(true);
+                // show toast
+                toast.success("Custom bouquet added to cart!");
+                setTimeout(() => {
+                    router.push("/cart");
+                }, 1800);
+            } else {
+                alert(result.message || "Failed to add bouquet to cart");
             }
-
-            setIsSuccess(true);
-
-            // Redirect to cart after 2 seconds
-            setTimeout(() => {
-                router.push("/cart");
-            }, 2000);
-        } catch (error: any) {
-            console.error("Add to cart error:", error);
-            alert(error.message || "Something went wrong. Please try again.");
+        } catch (err: any) {
+            console.error("Add custom bouquet error:", err);
+            alert("Something went wrong. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -824,9 +895,9 @@ export default function BouquetBuilder() {
             <div className="relative py-14 px-6 text-center overflow-hidden" style={{ background: "linear-gradient(160deg, #F3E6E6 0%, #EDD5D5 50%, #E8D0D0 100%)" }}>
                 <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
                     {[
-                        { src: "https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=120&q=60", left: "5%", top: "-10%" },
-                        { src: "https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?w=120&q=60", left: "40%", top: "-15%" },
-                        { src: "https://images.unsplash.com/photo-1520763185298-1b434c919102?w=120&q=60", left: "78%", top: "-5%" },
+                        { src: "/images/singlerose.jpg", left: "5%", top: "-10%" },
+                        { src: "/images/singlesunflower2.jpg", left: "40%", top: "-15%" },
+                        { src: "/images/singlepeony4.jpg", left: "78%", top: "-5%" },
                     ].map((item, i) => (
                         <div key={i} className="absolute rounded-full overflow-hidden opacity-10" style={{ width: "130px", height: "130px", left: item.left, top: item.top, transform: `rotate(${i * 12 - 12}deg)` }}>
                             <Image src={item.src} alt="" fill className="object-cover" sizes="130px" />
