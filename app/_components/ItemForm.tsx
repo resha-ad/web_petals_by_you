@@ -9,6 +9,15 @@ import { z } from "zod";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 
+const CATEGORIES = [
+    { value: "", label: "Select a Category" },
+    { value: "bouquets", label: "Bouquets" },
+    { value: "flowers", label: "Flowers" },
+    { value: "arrangements", label: "Arrangements" },
+    { value: "gifts", label: "Gift Sets" },
+    { value: "others", label: "Others" },
+];
+
 const itemSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
@@ -34,7 +43,6 @@ const itemSchema = z.object({
 
 type ItemFormData = z.infer<typeof itemSchema>;
 
-// This is the shape you get from backend for existing item
 type ExistingItem = {
     _id: string;
     name: string;
@@ -45,13 +53,14 @@ type ExistingItem = {
     stock: number;
     isFeatured: boolean;
     isAvailable?: boolean | null;
-    images: string[];           // ← array of server paths like "/uploads/xxx.jpg"
+    images: string[];
     createdAt?: string;
     updatedAt?: string;
     preparationTime?: number | null;
     deliveryType?: string | null;
     createdBy?: { username?: string; email?: string } | null;
 };
+
 type ItemFormProps = {
     initialData?: Partial<ExistingItem>;
     defaultValues?: Partial<ItemFormData>;
@@ -64,9 +73,7 @@ export default function ItemForm({ defaultValues = {}, onSubmit, buttonText }: I
     const [previews, setPreviews] = useState<string[]>([]);
 
     const form = useForm<ItemFormData>({
-        resolver: zodResolver(itemSchema) as any,   // ← this silences the resolver mismatch
-        // or more safely:
-        // resolver: zodResolver(itemSchema) satisfies Resolver<ItemFormData>,
+        resolver: zodResolver(itemSchema) as any,
         defaultValues: {
             name: "",
             description: "",
@@ -90,7 +97,6 @@ export default function ItemForm({ defaultValues = {}, onSubmit, buttonText }: I
         const urls = files.map((file) => URL.createObjectURL(file));
         setPreviews(urls);
 
-        // Clean up old object URLs when component unmounts or files change
         return () => urls.forEach(URL.revokeObjectURL);
     };
 
@@ -105,7 +111,11 @@ export default function ItemForm({ defaultValues = {}, onSubmit, buttonText }: I
             }
             if (data.category) formData.append("category", data.category);
             formData.append("stock", data.stock.toString());
-            formData.append("isFeatured", data.isFeatured.toString());
+
+            // ✅ Fix: send "1" or "0" instead of "true"/"false"
+            // z.coerce.boolean() treats "false" as true (truthy string),
+            // but correctly maps 0 → false and 1 → true
+            formData.append("isFeatured", data.isFeatured ? "1" : "0");
 
             data.images?.forEach((file) => {
                 formData.append("images", file);
@@ -171,11 +181,17 @@ export default function ItemForm({ defaultValues = {}, onSubmit, buttonText }: I
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">Category</label>
-                    <input
+                    <select
                         {...register("category")}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-[#6B4E4E] focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none"
-                        placeholder="e.g. Roses, Bouquets, Wedding"
-                    />
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-[#6B4E4E] focus:border-[#E8B4B8] focus:ring-1 focus:ring-[#E8B4B8] outline-none bg-white"
+                    >
+                        {CATEGORIES.map((cat) => (
+                            <option key={cat.value} value={cat.value}>
+                                {cat.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
                 </div>
                 <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">Stock</label>

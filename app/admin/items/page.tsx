@@ -24,16 +24,16 @@ export default async function AdminItemsPage({
     return (
         <div className="p-8">
             <div className="flex justify-between items-center mb-10">
-                <h1 className="text-4xl font-serif text-[#6B4E4E]">Bouquets Management</h1>
+                <h1 className="text-4xl font-serif text-[#6B4E4E]">Product Management</h1>
                 <Link
                     href="/admin/items/create"
                     className="px-8 py-4 rounded-full bg-[#E8B4B8] text-white hover:bg-[#D9A3A7] transition shadow-md"
                 >
-                    + Add New Bouquet
+                    + Add Product
                 </Link>
             </div>
 
-            {/* Search form – added action and method so it actually works */}
+            {/* Search form */}
             <div className="mb-8">
                 <form action="/admin/items" method="GET" className="max-w-md">
                     <div className="flex">
@@ -55,7 +55,7 @@ export default async function AdminItemsPage({
             </div>
 
             {items.length === 0 ? (
-                <p className="text-center py-12 text-gray-600 text-lg">No bouquets found</p>
+                <p className="text-center py-12 text-gray-600 text-lg">No products found</p>
             ) : (
                 <>
                     <div className="overflow-x-auto bg-white rounded-2xl shadow">
@@ -119,11 +119,11 @@ export default async function AdminItemsPage({
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Pagination*/}
                     {pagination.totalPages > 1 && (
                         <div className="mt-10 flex justify-center items-center gap-6">
                             <Link
-                                href={`/admin/items?page=${page - 1}${search ? `&search=${search}` : ""}`}
+                                href={`/admin/items?page=${page - 1}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
                                 className={`px-6 py-3 rounded-full ${page === 1
                                     ? "bg-gray-200 text-gray-500 pointer-events-none"
                                     : "bg-[#E8B4B8] text-white hover:bg-[#D9A3A7]"
@@ -138,7 +138,7 @@ export default async function AdminItemsPage({
                             </span>
 
                             <Link
-                                href={`/admin/items?page=${page + 1}${search ? `&search=${search}` : ""}`}
+                                href={`/admin/items?page=${page + 1}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
                                 className={`px-6 py-3 rounded-full ${page === pagination.totalPages
                                     ? "bg-gray-200 text-gray-500 pointer-events-none"
                                     : "bg-[#E8B4B8] text-white hover:bg-[#D9A3A7]"

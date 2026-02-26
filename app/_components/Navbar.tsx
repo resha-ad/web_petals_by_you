@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 const navLinks = [
     { href: "/", label: "Home" },
     { href: "/shop", label: "Shop" },
-    { href: "/#about", label: "About" },
+    { href: "/build", label: "Design Bouquet" }
 ];
 
 const iconLinks = [
@@ -65,8 +65,8 @@ export default function Navbar() {
         <>
             <nav
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-                        ? "bg-white/95 backdrop-blur-md shadow-sm shadow-rose-100/80 border-b border-rose-100/60"
-                        : "bg-transparent"
+                    ? "bg-white/95 backdrop-blur-md shadow-sm shadow-rose-100/80 border-b border-rose-100/60"
+                    : "bg-transparent"
                     }`}
             >
                 <div className="max-w-7xl mx-auto px-6">
@@ -104,8 +104,8 @@ export default function Navbar() {
                                     key={link.href}
                                     href={link.href}
                                     className={`relative px-4 py-2 text-sm tracking-wide transition-colors duration-200 group ${isActive(link.href)
-                                            ? "text-[#6B4E4E]"
-                                            : "text-[#9A7A7A] hover:text-[#6B4E4E]"
+                                        ? "text-[#6B4E4E]"
+                                        : "text-[#9A7A7A] hover:text-[#6B4E4E]"
                                         }`}
                                 >
                                     {link.label}
@@ -127,8 +127,8 @@ export default function Navbar() {
                                         href={item.href}
                                         aria-label={item.label}
                                         className={`relative p-2.5 rounded-full transition-all duration-200 group ${isActive(item.href)
-                                                ? "text-[#6B4E4E] bg-rose-50"
-                                                : "text-[#9A7A7A] hover:text-[#6B4E4E] hover:bg-rose-50"
+                                            ? "text-[#6B4E4E] bg-rose-50"
+                                            : "text-[#9A7A7A] hover:text-[#6B4E4E] hover:bg-rose-50"
                                             } ${item.label === "Favorites" ? "hidden sm:flex" : "flex"}`}
                                     >
                                         {item.icon}
@@ -196,8 +196,8 @@ export default function Navbar() {
                                 key={link.href}
                                 href={link.href}
                                 className={`py-3 text-sm tracking-wide border-b border-rose-50 last:border-0 transition-colors ${isActive(link.href)
-                                        ? "text-[#6B4E4E] font-medium"
-                                        : "text-[#9A7A7A]"
+                                    ? "text-[#6B4E4E] font-medium"
+                                    : "text-[#9A7A7A]"
                                     }`}
                             >
                                 {link.label}
