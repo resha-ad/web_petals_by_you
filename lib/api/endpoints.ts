@@ -15,4 +15,11 @@ export const API = {
             DELETE: (id: string) => `/api/admin/users/${id}`,
         },
     },
+    ITEMS: {
+        LIST: "/api/items",
+        CREATE: "/api/items",
+        GET_ONE: (slug: string) => `/api/items/${slug}`,
+        UPDATE: (id: string) => `/api/items/${id}`,
+        DELETE: (id: string) => `/api/items/${id}`,
+    },
 };

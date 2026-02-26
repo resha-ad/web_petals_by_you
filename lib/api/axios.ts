@@ -11,14 +11,15 @@ const axiosInstance = axios.create({
     withCredentials: true,
 });
 
-axiosInstance.interceptors.request.use((config) => {
-    const token = Cookies.get("auth_token"); // client-safe read
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+// axiosInstance.interceptors.request.use((config) => {
+//     const token = Cookies.get("auth_token"); // client-safe read
+//     console.log("[axios] Attaching token:", token ? "yes" : "no");
+//     if (token) {
+//         config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+// }, (error) => {
+//     return Promise.reject(error);
+// });
 
 export default axiosInstance;
