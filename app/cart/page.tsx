@@ -1,9 +1,18 @@
+// app/cart/page.tsx
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/_contexts/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
+
+import {
+    getUserCartAction,
+    updateQuantityAction,
+    removeItemAction,
+    clearCartAction,
+} from "@/lib/actions/cart-action";
 
 interface CartItem {
     _id?: string;
@@ -28,6 +37,7 @@ interface CartItem {
 export default function CartPage() {
     const { isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
+
     const [cart, setCart] = useState<{ items: CartItem[]; total: number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -39,83 +49,56 @@ export default function CartPage() {
             return;
         }
 
-        const fetchCart = async () => {
-            try {
-                setLoading(true);
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cart`, {
-                    credentials: "include",
-                });
-
-                if (!res.ok) throw new Error("Failed to load cart");
-
-                const data = await res.json();
-                if (data.success) {
-                    setCart(data.data);
-                } else {
-                    setError(data.message || "Cart is empty or unavailable");
-                }
-            } catch (err: any) {
-                setError(err.message || "Something went wrong");
-            } finally {
-                setLoading(false);
+        const loadCart = async () => {
+            setLoading(true);
+            const result = await getUserCartAction();
+            if (result.success && result.cart) {
+                setCart(result.cart);
+            } else {
+                setError(result.message || "Cart is empty or unavailable");
             }
+            setLoading(false);
         };
 
-        fetchCart();
+        loadCart();
     }, [isAuthenticated, authLoading, router]);
 
     const handleUpdateQuantity = async (refId: string, newQty: number) => {
         if (newQty < 1) return;
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cart/update-quantity`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ refId, quantity: newQty }),
-            });
 
-            if (!res.ok) throw new Error("Failed to update quantity");
-
-            const data = await res.json();
-            if (data.success) setCart(data.data);
-        } catch (err) {
-            alert("Could not update quantity");
+        const result = await updateQuantityAction(refId, newQty);
+        if (result.success && result.cart) {
+            setCart(result.cart);
+        } else {
+            alert(result.message || "Could not update quantity");
         }
     };
 
     const handleRemoveItem = async (refId: string) => {
         if (!confirm("Remove this item?")) return;
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cart/remove/${refId}`, {
-                method: "DELETE",
-                credentials: "include",
-            });
 
-            if (!res.ok) throw new Error("Failed to remove item");
-
-            const data = await res.json();
-            if (data.success) setCart(data.data);
-        } catch (err) {
-            alert("Could not remove item");
+        const result = await removeItemAction(refId);
+        if (result.success && result.cart) {
+            setCart(result.cart);
+        } else {
+            alert(result.message || "Could not remove item");
         }
     };
 
     const handleClearCart = async () => {
         if (!confirm("Clear entire cart?")) return;
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cart/clear`, {
-                method: "DELETE",
-                credentials: "include",
-            });
 
-            if (!res.ok) throw new Error("Failed to clear cart");
-
-            const data = await res.json();
-            if (data.success) setCart(data.data);
-        } catch (err) {
-            alert("Could not clear cart");
+        const result = await clearCartAction();
+        if (result.success && result.cart) {
+            setCart(result.cart);
+        } else {
+            alert(result.message || "Could not clear cart");
         }
     };
+
+    // ────────────────────────────────────────────────
+    // Loading / Error / Empty states
+    // ────────────────────────────────────────────────
 
     if (authLoading || loading) {
         return (
@@ -130,7 +113,10 @@ export default function CartPage() {
             <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
                 <h1 className="text-3xl font-serif text-[#6B4E4E] mb-4">Your Cart</h1>
                 <p className="text-[#9A7A7A] mb-6">{error}</p>
-                <Link href="/shop" className="px-8 py-3 bg-[#6B4E4E] text-white rounded-full hover:bg-[#5a3f3f]">
+                <Link
+                    href="/shop"
+                    className="px-8 py-3 bg-[#6B4E4E] text-white rounded-full hover:bg-[#5a3f3f]"
+                >
                     Continue Shopping
                 </Link>
             </div>
@@ -145,12 +131,19 @@ export default function CartPage() {
                 <p className="text-[#9A7A7A] mb-8 max-w-md">
                     Looks like you haven't added anything yet. Start shopping to fill it up!
                 </p>
-                <Link href="/shop" className="px-8 py-3 bg-[#6B4E4E] text-white rounded-full hover:bg-[#5a3f3f]">
+                <Link
+                    href="/shop"
+                    className="px-8 py-3 bg-[#6B4E4E] text-white rounded-full hover:bg-[#5a3f3f]"
+                >
                     Browse Flowers
                 </Link>
             </div>
         );
     }
+
+    // ────────────────────────────────────────────────
+    // Main cart view
+    // ────────────────────────────────────────────────
 
     return (
         <div className="min-h-screen bg-[#FBF6F4] py-10 px-6">
@@ -166,8 +159,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-rose-50 overflow-hidden">
-                    {/* Items */}
-                    {cart.items.map((item, index) => (
+                    {cart.items.map((item) => (
                         <div
                             key={item.refId}
                             className="flex flex-col sm:flex-row gap-6 p-6 border-b border-rose-50 last:border-b-0"
@@ -175,7 +167,6 @@ export default function CartPage() {
                             {/* Image / Preview */}
                             <div className="w-full sm:w-32 h-32 relative rounded-xl overflow-hidden flex-shrink-0">
                                 {item.type === "custom" ? (
-                                    // Simple bouquet preview placeholder
                                     <div className="w-full h-full bg-gradient-to-br from-rose-100 to-purple-100 flex items-center justify-center">
                                         <span className="text-4xl">💐</span>
                                     </div>
@@ -196,18 +187,14 @@ export default function CartPage() {
                             {/* Details */}
                             <div className="flex-1">
                                 <h3 className="font-serif text-xl text-[#6B4E4E] mb-2">
-                                    {item.type === "custom"
-                                        ? "Custom Bouquet"
-                                        : item.details?.name || "Product"}
+                                    {item.type === "custom" ? "Custom Bouquet" : item.details?.name || "Product"}
                                 </h3>
 
                                 {item.type === "custom" && item.details && (
                                     <div className="text-sm text-[#9A7A7A] mb-3">
-                                        <p>
-                                            {item.details.flowers
-                                                ?.map((f: any) => `${f.name} × ${f.count}`)
-                                                .join(", ")}
-                                        </p>
+                                        {item.details.flowers && (
+                                            <p>{item.details.flowers.map((f: any) => `${f.name} × ${f.count}`).join(", ")}</p>
+                                        )}
                                         {item.details.wrapping && <p>Wrapped in {item.details.wrapping.name}</p>}
                                         {item.details.recipientName && <p>To: {item.details.recipientName}</p>}
                                     </div>
