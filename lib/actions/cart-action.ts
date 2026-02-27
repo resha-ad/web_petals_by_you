@@ -15,28 +15,22 @@ function serializeCart(data: any) {
 }
 
 /**
- * Fetches product details by MongoDB ObjectId.
- * Tries /api/items?id=<id> first, then /api/items/<id> as fallback.
+ * Fetches product details by MongoDB ObjectId — used as a fallback only
+ * if the backend didn't attach refDetails (e.g. older data or cache miss).
  */
 async function fetchProductById(productId: string): Promise<any | null> {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-    // Try common patterns for ID-based lookup
     const endpoints = [
-        `${base}/api/items/${productId}`,        // some backends accept ObjectId as slug param
-        `${base}/api/items?itemId=${productId}`, // query param variant
+        `${base}/api/items/${productId}`,
+        `${base}/api/items?itemId=${productId}`,
     ];
-
     for (const url of endpoints) {
         try {
             const res = await fetch(url, { cache: "no-store" });
             if (res.ok) {
                 const json = await res.json();
                 const product = json?.data ?? json;
-                // Make sure we got a real product (has name or images)
-                if (product && (product.name || product.images)) {
-                    return product;
-                }
+                if (product && (product.name || product.images)) return product;
             }
         } catch {
             continue;
@@ -46,32 +40,37 @@ async function fetchProductById(productId: string): Promise<any | null> {
 }
 
 /**
- * When populate() doesn't survive the serialization boundary,
- * this manually fetches product data for each product-type cart item
- * and attaches it as item.details.
+ * Enriches cart items with product/bouquet details.
+ * 
+ * The fixed backend (cart.repository.ts) now attaches `refDetails` directly
+ * on each item, so in the happy path this function is a no-op pass-through.
+ * The fallback fetch only fires for edge cases (old cached data, etc.).
  */
 async function enrichCartItems(cart: any): Promise<any> {
     if (!cart?.items?.length) return cart;
 
     const enriched = await Promise.all(
         cart.items.map(async (item: any) => {
-            // Already populated — refId is an object with name/images
+            // ✅ New backend — refDetails already attached, nothing to do
+            if (item.refDetails) return item;
+
+            // Compat: refId was populated as an object with name/images
             if (item.refId && typeof item.refId === "object" && item.refId.name) {
-                return { ...item, details: item.refId };
+                return { ...item, refDetails: item.refId };
             }
 
-            // Custom bouquets: refId points to CustomBouquet, not Item
+            // Custom bouquets: refDetails may have flowers/wrapping from backend
+            // If missing, there's nothing to fetch from the Item model
             if (item.type === "custom") return item;
 
-            // Product: fetch details by ID
+            // Product fallback: fetch details by ID
             const productId = typeof item.refId === "object"
                 ? (item.refId._id ?? item.refId).toString()
                 : String(item.refId);
 
             const product = await fetchProductById(productId);
-            if (product) {
-                return { ...item, details: product };
-            }
+            if (product) return { ...item, refDetails: product };
+
             return item;
         })
     );

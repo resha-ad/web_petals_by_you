@@ -133,7 +133,7 @@ export default async function ItemDetailPage({
                                         </svg>
                                         Delivery
                                     </span>
-                                    <span className="text-emerald-600 font-medium">Available in Kathmandu</span>
+                                    <span className="text-emerald-600 font-medium">Available</span>
                                 </div>
                             </div>
 

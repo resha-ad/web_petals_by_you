@@ -32,7 +32,7 @@ const iconLinks = [
         badge: 3, // Replace with dynamic cart count
     },
     {
-        href: "/profile",
+        href: "user/profile",
         label: "Profile",
         icon: (
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">

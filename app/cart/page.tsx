@@ -8,6 +8,7 @@ import Link from "next/link";
 import CartItem from "./_components/CartItem";
 import CartSummary from "./_components/CartSummary";
 import EmptyCart from "./_components/EmptyCart";
+import type { CheckoutFormData } from "./_components/CheckoutModal";
 
 import {
     getUserCartAction,
@@ -15,6 +16,7 @@ import {
     removeItemAction,
     clearCartAction,
 } from "@/lib/actions/cart-action";
+import { placeOrderAction } from "@/lib/actions/order-action";
 
 import "./cart.css";
 
@@ -30,6 +32,7 @@ export interface CartItemType {
         images?: string[];
         description?: string;
         price?: number;
+        stock?: number;
         flowers?: any[];
         wrapping?: any;
         note?: string;
@@ -40,25 +43,25 @@ export interface CartItemType {
 
 function normalizeCartItems(rawItems: any[]): CartItemType[] {
     return rawItems.map((item: any, idx: number) => {
-        // After JSON.parse(JSON.stringify(doc)), Mongoose docs become plain objects.
-        // refId will be either:
-        //   (a) a plain object with _id field → populated
-        //   (b) a plain string ObjectId        → not populated
-        const isPopulated = item.refId && typeof item.refId === "object" && !Array.isArray(item.refId);
-        const refId = isPopulated
-            ? (item.refId._id ?? item.refId.id ?? item.refId).toString()
-            : String(item.refId);
-        const details = isPopulated ? item.refId : (item.details ?? null);
+        let refId: string;
+        let details: CartItemType["details"] | null = null;
 
-        // Dev-only log to confirm image paths
+        if (item.refDetails) {
+            // New backend: refDetails attached directly ✅
+            refId = String(item.refId);
+            details = item.refDetails;
+        } else if (item.refId && typeof item.refId === "object" && !Array.isArray(item.refId)) {
+            // Old: populated refId object
+            refId = (item.refId._id ?? item.refId.id ?? item.refId).toString();
+            details = item.refId;
+        } else {
+            // Plain string ID
+            refId = String(item.refId);
+            details = item.details ?? null;
+        }
+
         if (process.env.NODE_ENV === "development") {
-            console.log(`[cart item ${idx}]`, {
-                type: item.type,
-                refId,
-                isPopulated,
-                images: details?.images,
-                name: details?.name,
-            });
+            console.log(`[cart item ${idx}]`, { type: item.type, refId, name: details?.name, images: details?.images });
         }
 
         return {
@@ -68,13 +71,13 @@ function normalizeCartItems(rawItems: any[]): CartItemType[] {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             subtotal: item.subtotal,
-            details,
+            details: details ?? undefined,
         };
     });
 }
 
 export default function CartPage() {
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, user } = useAuth();
     const router = useRouter();
 
     const [cart, setCart] = useState<{ items: CartItemType[]; total: number } | null>(null);
@@ -82,30 +85,21 @@ export default function CartPage() {
     const [error, setError] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [isClearing, setIsClearing] = useState(false);
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
 
     const applyCart = (raw: any) => {
         if (!raw) return;
-        setCart({
-            total: raw.total ?? 0,
-            items: normalizeCartItems(raw.items ?? []),
-        });
+        setCart({ total: raw.total ?? 0, items: normalizeCartItems(raw.items ?? []) });
     };
 
     useEffect(() => {
         if (authLoading) return;
-        if (!isAuthenticated) {
-            router.push("/login?redirect=/cart");
-            return;
-        }
-
+        if (!isAuthenticated) { router.push("/login?redirect=/cart"); return; }
         (async () => {
             setLoading(true);
             const result = await getUserCartAction();
-            if (result.success && result.cart) {
-                applyCart(result.cart);
-            } else {
-                setError(result.message || "Cart is empty or unavailable");
-            }
+            if (result.success && result.cart) applyCart(result.cart);
+            else setError(result.message || "Cart unavailable");
             setLoading(false);
         })();
     }, [isAuthenticated, authLoading, router]);
@@ -120,7 +114,7 @@ export default function CartPage() {
     };
 
     const handleRemoveItem = async (refId: string) => {
-        if (!confirm("Remove this item from your cart?")) return;
+        if (!confirm("Remove this item?")) return;
         setUpdatingId(refId);
         const result = await removeItemAction(refId);
         if (result.success && result.cart) applyCart(result.cart);
@@ -137,37 +131,57 @@ export default function CartPage() {
         setIsClearing(false);
     };
 
-    if (authLoading || loading) {
-        return (
-            <div className="cart-loading">
-                <div className="loading-petals">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="loading-petal" style={{ animationDelay: `${i * 0.2}s` }} />
-                    ))}
-                </div>
-                <p className="loading-text">Gathering your blooms…</p>
-            </div>
+    const handleCheckout = async (formData: CheckoutFormData) => {
+        setIsCheckingOut(true);
+        const result = await placeOrderAction(
+            formData.paymentMethod,
+            {
+                recipientName: formData.recipientName,
+                recipientPhone: formData.recipientPhone,
+                email: formData.email,
+                address: {
+                    street: formData.street,
+                    city: formData.city,
+                    state: formData.state || undefined,
+                    zip: formData.zip || undefined,
+                    country: formData.country,
+                },
+            },
+            formData.notes || undefined
         );
-    }
 
-    if (error) {
-        return (
-            <div className="cart-error">
-                <div className="error-icon">🥀</div>
-                <h1 className="error-title">Something wilted</h1>
-                <p className="error-message">{error}</p>
-                <Link href="/shop" className="error-cta">Back to Shop</Link>
-            </div>
-        );
-    }
+        if (result.success) {
+            // result.data = { order, delivery }
+            router.push(`/user/orders/${result.data.order._id}?placed=1`);
+        } else {
+            alert(result.message || "Could not place order");
+            setIsCheckingOut(false);
+        }
+    };
 
-    if (!cart || cart.items.length === 0) {
-        return (
-            <div className="cart-page-wrap">
-                <EmptyCart />
+    if (authLoading || loading) return (
+        <div className="cart-loading">
+            <div className="loading-petals">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="loading-petal" style={{ animationDelay: `${i * 0.2}s` }} />
+                ))}
             </div>
-        );
-    }
+            <p className="loading-text">Gathering your blooms…</p>
+        </div>
+    );
+
+    if (error) return (
+        <div className="cart-error">
+            <div className="error-icon">🥀</div>
+            <h1 className="error-title">Something wilted</h1>
+            <p className="error-message">{error}</p>
+            <Link href="/shop" className="error-cta">Back to Shop</Link>
+        </div>
+    );
+
+    if (!cart || cart.items.length === 0) return (
+        <div className="cart-page-wrap"><EmptyCart /></div>
+    );
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -191,11 +205,7 @@ export default function CartPage() {
                 <section className="cart-items-section">
                     <div className="cart-items-list">
                         {cart.items.map((item, idx) => (
-                            <div
-                                key={item._id}
-                                className="cart-item-wrapper"
-                                style={{ animationDelay: `${idx * 0.07}s` }}
-                            >
+                            <div key={item._id} className="cart-item-wrapper" style={{ animationDelay: `${idx * 0.07}s` }}>
                                 <CartItem
                                     item={item}
                                     onUpdateQuantity={handleUpdateQuantity}
@@ -213,6 +223,9 @@ export default function CartPage() {
                         itemCount={itemCount}
                         onClearCart={handleClearCart}
                         isClearing={isClearing}
+                        onCheckout={handleCheckout}
+                        isCheckingOut={isCheckingOut}
+                        user={user}
                     />
                 </aside>
             </div>
