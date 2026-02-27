@@ -48,10 +48,10 @@ export default function CartItem({ item, onUpdateQuantity, onRemove, isUpdating 
                             src={imageSrc}
                             alt={item.details?.name || "Product"}
                             onError={() => {
-                                console.warn("[CartItem] ❌ Image 404 or failed:", imageSrc);
+                                console.warn("[CartItem] Image 404 or failed:", imageSrc);
                                 setImgError(true);
                             }}
-                            onLoad={() => console.log("[CartItem] ✅ Image loaded:", imageSrc)}
+                            onLoad={() => console.log("[CartItem] Image loaded:", imageSrc)}
                             style={{
                                 position: "absolute",
                                 inset: 0,
