@@ -1,63 +1,92 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthToken, getUserData } from "@/lib/cookie";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { getAuthToken, getUserData } from '@/lib/cookie'
 
 export async function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-    const token = await getAuthToken();
-    const user = token ? await getUserData() : null;
+    const path = request.nextUrl.pathname
+    console.log('[Middleware] Path:', path)
 
-    console.log("[Middleware] Path:", pathname);
-    console.log("[Middleware] Token exists:", !!token);
-    console.log("[Middleware] User data:", user ? user.role : "No user");
+    // Get token from cookies
+    const token = request.cookies.get('auth_token')?.value
+    const userDataCookie = request.cookies.get('user_data')?.value
+    let userData = null
 
-    // Public routes - allow without login
-    const publicRoutes = ["/", "/login", "/register"];
-    if (publicRoutes.includes(pathname) || pathname.startsWith("/(auth)")) {
-        // If logged in, redirect away from login/register
-        if (token && (pathname === "/login" || pathname === "/register")) {
-            const redirectTo = user?.role === "admin" ? "/admin" : "/user/dashboard";
-            console.log("[Middleware] Redirecting logged-in user from auth page to:", redirectTo);
-            return NextResponse.redirect(new URL(redirectTo, request.url));
+    try {
+        userData = userDataCookie ? JSON.parse(userDataCookie) : null
+    } catch (e) {
+        console.error('[Middleware] Failed to parse user_data cookie:', e)
+    }
+
+    console.log('[Middleware] Token exists:', !!token)
+    console.log('[Middleware] User role:', userData?.role)
+
+    // Define public routes that don't require authentication
+    const isPublicRoute =
+        path === '/' ||
+        path.startsWith('/shop') ||
+        path.startsWith('/products') ||
+        path.startsWith('/about') ||
+        path.startsWith('/contact') ||
+        path.match(/^\/product\/[^\/]+$/) // matches /product/something
+
+    // Define auth routes (login/register)
+    const isAuthRoute = path === '/login' || path === '/register'
+
+    // Define protected routes that require authentication
+    const isProtectedRoute =
+        path.startsWith('/user') ||
+        path === '/cart' ||
+        path === '/favorites' ||
+        path === '/build-bouquet' ||
+        path.startsWith('/checkout')
+
+    // Define admin-only routes
+    const isAdminRoute = path.startsWith('/admin')
+
+    // If user is logged in and trying to access auth routes (login/register), redirect to dashboard
+    if (token && isAuthRoute) {
+        console.log('[Middleware] Redirecting logged-in user from auth page to dashboard')
+
+        // Redirect based on role
+        if (userData?.role === 'admin') {
+            return NextResponse.redirect(new URL('/admin', request.url))
+        } else {
+            return NextResponse.redirect(new URL('/user/dashboard', request.url))
         }
-        return NextResponse.next();
     }
 
-    // All other routes require login
-    if (!token) {
-        console.log("[Middleware] No token - redirect to login");
-        return NextResponse.redirect(new URL("/login", request.url));
+    // If user is not logged in and trying to access protected routes, redirect to login
+    if (!token && isProtectedRoute) {
+        console.log('[Middleware] Redirecting unauthenticated user to login')
+
+        // Store the original URL to redirect back after login
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('callbackUrl', path)
+
+        return NextResponse.redirect(loginUrl)
     }
 
-    // Admin routes require admin role
-    if (pathname.startsWith("/admin")) {
-        if (user?.role !== "admin") {
-            console.log("[Middleware] Non-admin trying admin route - redirect to dashboard");
-            return NextResponse.redirect(new URL("/user/dashboard", request.url));
-        }
-        return NextResponse.next();
+    // If user is not admin but trying to access admin routes, redirect to user dashboard
+    if (token && isAdminRoute && userData?.role !== 'admin') {
+        console.log('[Middleware] Non-admin user trying to access admin route, redirecting to user dashboard')
+        return NextResponse.redirect(new URL('/user/dashboard', request.url))
     }
 
-    // User routes - allow "user" and "admin"
-    if (pathname.startsWith("/user")) {
-        const allowedRoles = ["user", "admin"];
-        const currentRole = user?.role ?? "unknown";
-        if (!allowedRoles.includes(currentRole)) {
-            console.log("[Middleware] Invalid role for /user/*:", currentRole, "- redirect to home");
-            return NextResponse.redirect(new URL("/", request.url));
-        }
-        return NextResponse.next();
-    }
-
-    // Default: allow
-    return NextResponse.next();
+    // Allow access to all other routes
+    console.log('[Middleware] Allowing access to:', path)
+    return NextResponse.next()
 }
 
 export const config = {
     matcher: [
-        "/admin/:path*",
-        "/user/:path*",
-        "/login",
-        "/register",
-        "/",
-    ],
-};
+        /*
+         * Match all request paths except for the ones starting with:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public folder
+         */
+        '/((?!api|_next/static|_next/image|favicon.ico|uploads|public).*)',
+    ]
+}
