@@ -102,7 +102,7 @@ export default function UserProfileForm({ user }: { user: any }) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Avatar upload */}
             <div className="flex items-center gap-5">
-                <div className="relative flex-shrink-0">
+                <div className="relative shrink-0">
                     <div className="w-20 h-20 rounded-full bg-[#F3E6E6] border-2 border-[#E8D4D4] overflow-hidden flex items-center justify-center">
                         {preview ? (
                             <img src={preview} alt="Profile" className="w-full h-full object-cover" />
