@@ -1,4 +1,4 @@
-// lib/actions/item-actions.ts
+// lib/actions/item-action.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -35,7 +35,7 @@ export async function handleUpdateItem(id: string, formData: FormData) {
     }
 }
 
-// Delete item (soft or hard delete — depending on your backend)
+// Delete item
 export async function handleDeleteItem(id: string) {
     try {
         const res = await deleteItem(id);
@@ -50,23 +50,28 @@ export async function handleDeleteItem(id: string) {
     }
 }
 
-// Get all items (with pagination & optional search)
-export async function handleGetAllItems(page: number = 1, limit: number = 10, search?: string) {
+// Get all items (with pagination, optional search & category filter)
+export async function handleGetAllItems(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    category?: string,   // ← added
+) {
     try {
         const params = new URLSearchParams();
         params.append("page", page.toString());
         params.append("limit", limit.toString());
         if (search) params.append("search", search);
+        if (category) params.append("category", category);   // ← passed to backend
 
-        const queryString = params.toString();
-        const response = await getAllItems(queryString);
+        const response = await getAllItems(params.toString());
 
         if (response.success) {
             return {
                 success: true,
                 data: {
                     items: response.data?.items || [],
-                    pagination: response.data?.pagination || {  // ← changed here
+                    pagination: response.data?.pagination || {
                         page,
                         limit,
                         total: 0,

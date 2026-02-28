@@ -697,7 +697,7 @@ function StepNote({ bouquet, onChange }: { bouquet: BouquetState; onChange: (fie
                 <div>
                     <p className="text-xs text-[#9A7A7A] mb-3">Quick starters:</p>
                     <div className="flex flex-wrap gap-2">
-                        {["You make every day bloom 🌸", "With all my love ❤️", "Thinking of you 💭", "Happy Birthday! 🎂", "Thank you for everything 🙏"].map((t) => (
+                        {["You make every day bloom 🌸", "With all my love ❤️", "Thinking of you", "Happy Birthday! 🎂", "Thank you for everything"].map((t) => (
                             <button key={t} onClick={() => onChange("note", t)} className="px-3 py-1.5 rounded-full bg-[#F3E6E6] text-[#6B4E4E] text-xs hover:bg-[#E8D0D0] transition border border-transparent hover:border-[#E8B4B8]">{t}</button>
                         ))}
                     </div>
