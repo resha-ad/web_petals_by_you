@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import FeaturedItemCard from "@/app/_components/FeaturedItemCard";
-import { handleGetAllItems } from "@/lib/actions/item-action";
+import FeaturedSection from "@/app/_components/FeaturedSection";
 
 const flowers = ["🌸", "🌺", "🌹", "💐", "🌷", "🌼"];
 
@@ -23,8 +22,6 @@ const testimonials = [
         occasion: "Birthday",
     },
 ];
-
-// ─── SVG Icons for Services ────────────────────────────────────────────────────
 
 function IconBouquet() {
     return (
@@ -47,12 +44,9 @@ function IconBouquet() {
 function IconWedding() {
     return (
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Two rings interlinked */}
             <circle cx="13" cy="18" r="7" stroke="#C08080" strokeWidth="1.8" fill="none" />
             <circle cx="23" cy="18" r="7" stroke="#E8B4B8" strokeWidth="1.8" fill="none" />
-            {/* Sparkle top */}
             <path d="M18 5 L18.6 7 L20.5 7 L19 8.2 L19.5 10 L18 8.9 L16.5 10 L17 8.2 L15.5 7 L17.4 7 Z" fill="#F9A8D4" />
-            {/* Small decorative dots */}
             <circle cx="7" cy="10" r="1" fill="#E8B4B8" opacity="0.6" />
             <circle cx="29" cy="10" r="1" fill="#E8B4B8" opacity="0.6" />
             <circle cx="5" cy="24" r="0.8" fill="#C08080" opacity="0.5" />
@@ -64,20 +58,16 @@ function IconWedding() {
 function IconEvent() {
     return (
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Table */}
             <rect x="4" y="22" width="28" height="3" rx="1.5" fill="#E8B4B8" />
             <path d="M8 25 L8 32" stroke="#C08080" strokeWidth="1.5" strokeLinecap="round" />
             <path d="M28 25 L28 32" stroke="#C08080" strokeWidth="1.5" strokeLinecap="round" />
-            {/* Centerpiece vase */}
             <path d="M15 22 Q14 18 16 16 L18 16 L20 16 Q22 18 21 22 Z" fill="#FDF2F8" stroke="#D4A0A0" strokeWidth="1.2" />
-            {/* Flowers in vase */}
             <circle cx="16" cy="11" r="2.5" fill="#F9A8D4" stroke="#C08080" strokeWidth="1" />
             <circle cx="20" cy="11" r="2.5" fill="#FDA4AF" stroke="#C08080" strokeWidth="1" />
             <circle cx="18" cy="9" r="2.5" fill="#E8B4B8" stroke="#C08080" strokeWidth="1" />
             <circle cx="16" cy="11" r="1" fill="#C08080" />
             <circle cx="20" cy="11" r="1" fill="#C08080" />
             <circle cx="18" cy="9" r="1" fill="#C08080" />
-            {/* Candles */}
             <rect x="6" y="17" width="2" height="5" rx="1" fill="#FDE68A" stroke="#F59E0B" strokeWidth="0.8" />
             <rect x="28" y="17" width="2" height="5" rx="1" fill="#FDE68A" stroke="#F59E0B" strokeWidth="0.8" />
             <path d="M7 17 Q7.5 15.5 7 14.5" stroke="#F97316" strokeWidth="1" strokeLinecap="round" />
@@ -85,8 +75,6 @@ function IconEvent() {
         </svg>
     );
 }
-
-// ─── SVG Icons for How It Works ────────────────────────────────────────────────
 
 function IconBrowse() {
     return (
@@ -105,7 +93,6 @@ function IconCustomize() {
             <path d="M8 24 L6 26 L8 28 L24 12 L22 10 Z" fill="#FDF2F8" stroke="#C08080" strokeWidth="1.5" strokeLinejoin="round" />
             <path d="M22 10 L26 6 L28 8 L24 12" fill="#E8B4B8" stroke="#C08080" strokeWidth="1.2" strokeLinejoin="round" />
             <path d="M6 26 L4 28 L6 28 L8 28" stroke="#C08080" strokeWidth="1.2" strokeLinecap="round" />
-            {/* Palette dots */}
             <circle cx="24" cy="24" r="4" fill="#FDF2F8" stroke="#E8B4B8" strokeWidth="1.5" />
             <circle cx="22.5" cy="23" r="1" fill="#F9A8D4" />
             <circle cx="25" cy="23" r="1" fill="#FDE68A" />
@@ -117,14 +104,12 @@ function IconCustomize() {
 function IconCraft() {
     return (
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            {/* Scissors */}
             <circle cx="9" cy="10" r="3" fill="#FDF2F8" stroke="#C08080" strokeWidth="1.5" />
             <circle cx="9" cy="20" r="3" fill="#FDF2F8" stroke="#C08080" strokeWidth="1.5" />
             <path d="M11.5 12 L24 19" stroke="#C08080" strokeWidth="1.8" strokeLinecap="round" />
             <path d="M11.5 18 L24 11" stroke="#C08080" strokeWidth="1.8" strokeLinecap="round" />
             <path d="M24 11 L28 9" stroke="#D4A0A0" strokeWidth="1.5" strokeLinecap="round" />
             <path d="M24 19 L28 21" stroke="#D4A0A0" strokeWidth="1.5" strokeLinecap="round" />
-            {/* Snip point */}
             <circle cx="9" cy="10" r="1.2" fill="#E8B4B8" />
             <circle cx="9" cy="20" r="1.2" fill="#E8B4B8" />
         </svg>
@@ -134,14 +119,11 @@ function IconCraft() {
 function IconDelivery() {
     return (
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            {/* Box */}
             <rect x="4" y="13" width="18" height="13" rx="1.5" fill="#FDF2F8" stroke="#C08080" strokeWidth="1.5" />
             <path d="M4 17 L22 17" stroke="#E8B4B8" strokeWidth="1.2" />
             <path d="M13 13 L13 17" stroke="#E8B4B8" strokeWidth="1.2" />
-            {/* Ribbon */}
             <path d="M13 13 Q11 11 9 12 Q8 14 13 15" fill="#F9A8D4" stroke="#C08080" strokeWidth="0.8" />
             <path d="M13 13 Q15 11 17 12 Q18 14 13 15" fill="#F9A8D4" stroke="#C08080" strokeWidth="0.8" />
-            {/* Arrow / motion */}
             <path d="M22 19 L28 16 L28 24 L22 24" fill="#FDF2F8" stroke="#C08080" strokeWidth="1.5" strokeLinejoin="round" />
             <circle cx="8" cy="27" r="2" fill="#E8B4B8" stroke="#C08080" strokeWidth="1.2" />
             <circle cx="18" cy="27" r="2" fill="#E8B4B8" stroke="#C08080" strokeWidth="1.2" />
@@ -150,24 +132,9 @@ function IconDelivery() {
 }
 
 const services = [
-    {
-        Icon: IconBouquet,
-        title: "Custom Bouquets",
-        desc: "Tell us your story and we'll craft a bouquet that speaks your heart.",
-        href: "/bouquet-builder",
-    },
-    {
-        Icon: IconWedding,
-        title: "Wedding Flowers",
-        desc: "Transforming your ceremony into a petal-strewn fairy tale.",
-        href: "/contact",
-    },
-    {
-        Icon: IconEvent,
-        title: "Event Styling",
-        desc: "From intimate dinners to grand galas — floral magic for every scale.",
-        href: "/contact",
-    },
+    { Icon: IconBouquet, title: "Custom Bouquets", desc: "Tell us your story and we'll craft a bouquet that speaks your heart.", href: "/bouquet-builder" },
+    { Icon: IconWedding, title: "Wedding Flowers", desc: "Transforming your ceremony into a petal-strewn fairy tale.", href: "/contact" },
+    { Icon: IconEvent, title: "Event Styling", desc: "From intimate dinners to grand galas — floral magic for every scale.", href: "/contact" },
 ];
 
 const howItWorks = [
@@ -176,99 +143,6 @@ const howItWorks = [
     { step: "03", Icon: IconCraft, label: "We Craft", desc: "Our florists handcraft your arrangement with fresh blooms." },
     { step: "04", Icon: IconDelivery, label: "Delivered", desc: "Delivered to your door in beautiful packaging." },
 ];
-
-// ─── Featured Items Section ────────────────────────────────────────────────────
-
-type Item = {
-    _id: string;
-    name: string;
-    slug: string;
-    description: string;
-    price: number;
-    discountPrice?: number | null;
-    images: string[];
-    isFeatured?: boolean;
-    stock?: number;
-};
-
-function FeaturedSection() {
-    const [items, setItems] = useState<Item[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        async function fetchFeatured() {
-            try {
-                const res = await handleGetAllItems(1, 20);
-                if (res.success && res.data) {
-                    const featured = res.data.items.filter((item: Item) => item.isFeatured);
-                    setItems(featured.slice(0, 3));
-                }
-            } catch (err) {
-                console.error("Failed to fetch featured items:", err);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchFeatured();
-    }, []);
-
-    return (
-        <section className="py-24 px-6 max-w-7xl mx-auto">
-            <div className="text-center mb-14">
-                <p className="text-xs tracking-widest uppercase text-[#C08080] mb-3">✦ Curated for You ✦</p>
-                <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E]" style={{ fontFamily: "Georgia, serif" }}>
-                    Featured Bouquets
-                </h2>
-                <p className="text-[#9A7A7A] text-sm mt-3 max-w-sm mx-auto leading-relaxed">
-                    Each arrangement is handpicked by our florists for its beauty and freshness.
-                </p>
-            </div>
-
-            {loading ? (
-                // Skeleton loaders
-                <div className="grid md:grid-cols-3 gap-6">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="rounded-3xl overflow-hidden bg-white shadow-sm animate-pulse">
-                            <div className="h-72 bg-rose-100/60" />
-                            <div className="p-5 space-y-3">
-                                <div className="h-4 bg-rose-100 rounded w-3/4" />
-                                <div className="h-3 bg-rose-50 rounded w-full" />
-                                <div className="h-3 bg-rose-50 rounded w-2/3" />
-                                <div className="flex justify-between items-center pt-2">
-                                    <div className="h-6 bg-rose-100 rounded w-24" />
-                                    <div className="w-10 h-10 rounded-full bg-rose-100" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : items.length > 0 ? (
-                <div className="grid md:grid-cols-3 gap-6">
-                    {items.map((item) => (
-                        <FeaturedItemCard key={item._id} item={item} />
-                    ))}
-                </div>
-            ) : (
-                // Fallback if no featured items yet
-                <div className="text-center py-16 text-[#9A7A7A]">
-                    <div className="text-5xl mb-4">💐</div>
-                    <p className="text-sm">No featured bouquets yet. Check back soon!</p>
-                </div>
-            )}
-
-            <div className="text-center mt-10">
-                <Link
-                    href="/shop"
-                    className="inline-flex items-center gap-2 text-sm text-[#9A7A7A] hover:text-[#6B4E4E] transition border-b border-dashed border-rose-200 pb-0.5"
-                >
-                    View all bouquets <span>→</span>
-                </Link>
-            </div>
-        </section>
-    );
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
     const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -290,7 +164,6 @@ export default function HomePage() {
                 className="relative min-h-screen flex items-center justify-center overflow-hidden"
                 style={{ background: "linear-gradient(160deg, #FBF6F4 0%, #F3E6E6 50%, #EDD5D5 100%)" }}
             >
-                {/* Floating petals */}
                 {[...Array(12)].map((_, i) => (
                     <div
                         key={i}
@@ -309,7 +182,6 @@ export default function HomePage() {
                     </div>
                 ))}
 
-                {/* Large decorative circles */}
                 <div className="absolute right-[-10vw] top-1/2 -translate-y-1/2 rounded-full border-2 border-rose-200/40 pointer-events-none" style={{ width: "60vw", height: "60vw" }} />
                 <div className="absolute right-[-5vw] top-1/2 -translate-y-1/2 rounded-full border border-[#E8B4B8]/30 pointer-events-none" style={{ width: "45vw", height: "45vw" }} />
 
@@ -340,7 +212,6 @@ export default function HomePage() {
                         </Link>
                     </div>
 
-                    {/* Trust badges */}
                     <div className="mt-14 flex flex-wrap justify-center gap-8 text-[#9A7A7A]">
                         {[["500+", "Happy Clients"], ["5★", "Avg. Rating"], ["2hr", "Express Delivery"]].map(([num, label]) => (
                             <div key={label} className="text-center">
@@ -351,14 +222,14 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {/* Scroll indicator */}
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#C4A0A0]">
                     <span className="text-xs tracking-widest uppercase">Scroll</span>
                     <div className="w-px h-8 bg-gradient-to-b from-[#E8B4B8] to-transparent animate-pulse" />
                 </div>
             </section>
 
-            {/* ── FEATURED BOUQUETS (from backend) ── */}
+            {/* ── FEATURED BOUQUETS ──
+                FeaturedSection fetches directly with credentials:"omit" — works for guests too. */}
             <FeaturedSection />
 
             {/* ── STORY BANNER ── */}
@@ -392,27 +263,16 @@ export default function HomePage() {
             <section id="services" className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-14">
                     <p className="text-xs tracking-widest uppercase text-[#C08080] mb-3">✦ What We Offer ✦</p>
-                    <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E]" style={{ fontFamily: "Georgia, serif" }}>
-                        Our Services
-                    </h2>
+                    <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E]" style={{ fontFamily: "Georgia, serif" }}>Our Services</h2>
                 </div>
-
                 <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
                     {services.map(({ Icon, title, desc, href }) => (
-                        <Link
-                            key={title}
-                            href={href}
-                            className="group p-8 rounded-3xl bg-white border border-rose-50 hover:border-[#E8B4B8] hover:shadow-lg transition-all duration-300 hover:-translate-y-1 text-center block"
-                        >
-                            {/* Icon container */}
+                        <Link key={title} href={href} className="group p-8 rounded-3xl bg-white border border-rose-50 hover:border-[#E8B4B8] hover:shadow-lg transition-all duration-300 hover:-translate-y-1 text-center block">
                             <div className="w-16 h-16 mx-auto rounded-2xl bg-[#FDF2F8] border border-rose-100 flex items-center justify-center mb-5 group-hover:bg-[#F9E6E6] group-hover:scale-110 transition-all duration-300 shadow-sm">
                                 <Icon />
                             </div>
                             <h3 className="font-serif text-lg text-[#6B4E4E] mb-3 group-hover:text-[#C08080] transition-colors duration-300">{title}</h3>
                             <p className="text-sm text-[#9A7A7A] leading-relaxed">{desc}</p>
-                            {/* <div className="mt-5 inline-flex items-center gap-1 text-xs text-[#C08080] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                Learn more <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
-                            </div> */}
                         </Link>
                     ))}
                 </div>
@@ -423,15 +283,10 @@ export default function HomePage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
                         <p className="text-xs tracking-widest uppercase text-[#C08080] mb-3">✦ Simple & Seamless ✦</p>
-                        <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E]" style={{ fontFamily: "Georgia, serif" }}>
-                            How It Works
-                        </h2>
+                        <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E]" style={{ fontFamily: "Georgia, serif" }}>How It Works</h2>
                     </div>
-
                     <div className="grid md:grid-cols-4 gap-4 relative">
-                        {/* Connector line */}
                         <div className="hidden md:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-rose-200 to-transparent" />
-
                         {howItWorks.map(({ step, Icon, label, desc }) => (
                             <div key={step} className="text-center relative group">
                                 <div className="w-20 h-20 mx-auto rounded-full bg-white border-2 border-rose-100 flex items-center justify-center shadow-sm mb-4 group-hover:border-[#E8B4B8] group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
@@ -449,10 +304,7 @@ export default function HomePage() {
             {/* ── TESTIMONIALS ── */}
             <section className="py-24 px-6 max-w-4xl mx-auto text-center">
                 <p className="text-xs tracking-widest uppercase text-[#C08080] mb-3">✦ Kind Words ✦</p>
-                <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E] mb-14" style={{ fontFamily: "Georgia, serif" }}>
-                    Stories from Our Customers
-                </h2>
-
+                <h2 className="text-4xl md:text-5xl font-serif text-[#6B4E4E] mb-14" style={{ fontFamily: "Georgia, serif" }}>Stories from Our Customers</h2>
                 <div className="relative min-h-[160px] flex items-center justify-center">
                     {testimonials.map((t, i) => (
                         <div
@@ -477,7 +329,6 @@ export default function HomePage() {
                         </div>
                     ))}
                 </div>
-
                 <div className="flex justify-center gap-2 mt-6">
                     {testimonials.map((_, i) => (
                         <button
@@ -489,7 +340,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── CTA SECTION ── */}
+            {/* ── CTA ── */}
             <section className="py-20 px-6">
                 <div className="max-w-4xl mx-auto rounded-3xl p-12 md:p-16 text-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #F3E6E6 0%, #EDD5D5 100%)" }}>
                     <div className="absolute top-0 right-0 text-[12rem] opacity-10 leading-none select-none pointer-events-none">🌸</div>
@@ -520,9 +371,7 @@ export default function HomePage() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease both;
-        }
+        .animate-fade-in { animation: fade-in 0.8s ease both; }
       `}</style>
         </main>
     );

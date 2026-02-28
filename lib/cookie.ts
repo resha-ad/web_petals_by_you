@@ -12,6 +12,9 @@ export interface UserData {
     [key: string]: any;
 }
 
+// 7 days in seconds — matches a typical JWT expiry
+const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
+
 export const setAuthToken = async (token: string) => {
     const cookieStore = await cookies();
 
@@ -20,6 +23,9 @@ export const setAuthToken = async (token: string) => {
         value: token,
         httpOnly: true,
         path: "/",
+        maxAge: TOKEN_MAX_AGE,       // ← expires after 7 days
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
     });
 };
 
@@ -36,6 +42,9 @@ export const setUserData = async (userData: UserData) => {
         value: JSON.stringify(userData),
         httpOnly: true,
         path: "/",
+        maxAge: TOKEN_MAX_AGE,       // ← same expiry as auth_token
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
     });
 };
 
