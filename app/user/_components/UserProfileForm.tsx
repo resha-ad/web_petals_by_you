@@ -136,7 +136,7 @@ export default function UserProfileForm({ user }: { user: any }) {
                     {errors.image && (
                         <p className="text-xs text-red-500 mt-1">{errors.image.message}</p>
                     )}
-                    {preview && (
+                    {/* {preview && (
                         <button
                             type="button"
                             onClick={() => handleImg()}
@@ -144,7 +144,7 @@ export default function UserProfileForm({ user }: { user: any }) {
                         >
                             Remove photo
                         </button>
-                    )}
+                    )} */}
                 </div>
             </div>
 

@@ -21,13 +21,13 @@ const DELIVERY_STATUSES = [
     { value: "failed", label: "Failed" },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    pending: { label: "Pending", color: "#92400E", bg: "#FEF3C7", dot: "#F59E0B" },
-    assigned: { label: "Assigned", color: "#1E40AF", bg: "#DBEAFE", dot: "#3B82F6" },
-    in_transit: { label: "In Transit", color: "#5B21B6", bg: "#EDE9FE", dot: "#8B5CF6" },
-    delivered: { label: "Delivered", color: "#166534", bg: "#DCFCE7", dot: "#22C55E" },
-    failed: { label: "Failed", color: "#991B1B", bg: "#FEE2E2", dot: "#EF4444" },
-    cancelled: { label: "Cancelled", color: "#6B7280", bg: "#F3F4F6", dot: "#9CA3AF" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; border: string }> = {
+    pending: { label: "Pending", color: "#92400E", bg: "#FFFBEB", dot: "#F59E0B", border: "#FDE68A" },
+    assigned: { label: "Assigned", color: "#1E40AF", bg: "#EFF6FF", dot: "#3B82F6", border: "#BFDBFE" },
+    in_transit: { label: "In Transit", color: "#5B21B6", bg: "#F5F3FF", dot: "#8B5CF6", border: "#DDD6FE" },
+    delivered: { label: "Delivered", color: "#166534", bg: "#DCFCE7", dot: "#22C55E", border: "#86EFAC" },
+    failed: { label: "Failed", color: "#991B1B", bg: "#FFF1F2", dot: "#EF4444", border: "#FECDD3" },
+    cancelled: { label: "Cancelled", color: "#6B7280", bg: "#F3F4F6", dot: "#9CA3AF", border: "#E5E7EB" },
 };
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -75,10 +75,42 @@ const Ico = {
         </svg>
     ),
     link: (
-        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
         </svg>
     ),
+    back: (
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+        </svg>
+    ),
+};
+
+// ─── Styles ────────────────────────────────────────────────────────────────────
+// ✅ FIX: every input/select/textarea now has explicit color: "#6B4E4E"
+// so the typed text is always readable in the brown palette
+
+const inp: React.CSSProperties = {
+    width: "100%",
+    padding: "9px 11px",
+    border: "1.5px solid #E8D4D4",
+    borderRadius: 8,
+    fontSize: "0.82rem",
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+    outline: "none",
+    background: "white",
+    color: "#6B4E4E",          // ← was missing; browser default was grey/white
+};
+
+const lbl: React.CSSProperties = {
+    fontSize: "0.65rem",
+    fontWeight: 700,
+    color: "#9A7A7A",
+    display: "block",
+    marginBottom: 5,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
 };
 
 // ─── Feedback banner ──────────────────────────────────────────────────────────
@@ -92,15 +124,13 @@ function FeedbackBanner({ msg }: { msg: { type: "success" | "error"; text: strin
             color: msg.type === "success" ? "#166534" : "#B91C1C",
             fontSize: "0.82rem", display: "flex", alignItems: "center", gap: 8,
         }}>
-            <span style={{ color: msg.type === "success" ? "#166534" : "#B91C1C" }}>
-                {msg.type === "success" ? Ico.check : Ico.x}
-            </span>
+            <span>{msg.type === "success" ? Ico.check : Ico.x}</span>
             {msg.text}
         </div>
     );
 }
 
-// ─── Delivery status pipeline ──────────────────────────────────────────────────
+// ─── Delivery status pipeline ─────────────────────────────────────────────────
 
 const PIPELINE = ["pending", "assigned", "in_transit", "delivered"];
 
@@ -159,13 +189,11 @@ export default function AdminDeliveryDetailPage() {
     const [cancelling, setCancelling] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    // Editable fields
     const [editStatus, setEditStatus] = useState("");
     const [editEst, setEditEst] = useState("");
     const [editNotes, setEditNotes] = useState("");
     const [trackingMsg, setTrackingMsg] = useState("");
 
-    // Cancel modal
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
 
@@ -189,7 +217,6 @@ export default function AdminDeliveryDetailPage() {
 
     useEffect(() => { load(); }, [id]);
 
-    // ── Update status / est date / notes ─────────────────────────────────
     const handleSaveChanges = async () => {
         setSaving(true);
         const payload: any = {};
@@ -198,55 +225,36 @@ export default function AdminDeliveryDetailPage() {
         const estRaw = editEst ? new Date(editEst).toISOString() : null;
         const currentEst = delivery.estimatedDelivery ? delivery.estimatedDelivery.split("T")[0] : "";
         if (editEst !== currentEst) payload.estimatedDelivery = estRaw;
-
         if (Object.keys(payload).length === 0) {
             showMsg("error", "No changes to save.");
             setSaving(false);
             return;
         }
-
         const res = await adminUpdateDeliveryAction(id, payload);
-        if (res.success) {
-            showMsg("success", "Delivery updated successfully.");
-            await load();
-        } else {
-            showMsg("error", res.message || "Failed to update delivery.");
-        }
+        if (res.success) { showMsg("success", "Delivery updated successfully."); await load(); }
+        else { showMsg("error", res.message || "Failed to update delivery."); }
         setSaving(false);
     };
 
-    // ── Add tracking update ───────────────────────────────────────────────
     const handleAddTracking = async () => {
         if (!trackingMsg.trim()) return;
         setAddingTrack(true);
         const res = await adminAddTrackingUpdateAction(id, trackingMsg.trim());
-        if (res.success) {
-            setTrackingMsg("");
-            showMsg("success", "Tracking update added.");
-            await load();
-        } else {
-            showMsg("error", res.message || "Failed to add tracking update.");
-        }
+        if (res.success) { setTrackingMsg(""); showMsg("success", "Tracking update added."); await load(); }
+        else { showMsg("error", res.message || "Failed to add tracking update."); }
         setAddingTrack(false);
     };
 
-    // ── Cancel delivery ───────────────────────────────────────────────────
     const handleCancel = async () => {
         if (!cancelReason.trim()) return;
         setCancelling(true);
         const res = await adminCancelDeliveryAction(id, cancelReason.trim());
-        if (res.success) {
-            setShowCancelModal(false);
-            setCancelReason("");
-            showMsg("success", "Delivery cancelled.");
-            await load();
-        } else {
-            showMsg("error", res.message || "Failed to cancel delivery.");
-        }
+        if (res.success) { setShowCancelModal(false); setCancelReason(""); showMsg("success", "Delivery cancelled."); await load(); }
+        else { showMsg("error", res.message || "Failed to cancel delivery."); }
         setCancelling(false);
     };
 
-    // ── Render guards ─────────────────────────────────────────────────────
+    // ─── Loading / not found ──────────────────────────────────────────────
 
     if (loading) return (
         <div style={{ padding: 60, textAlign: "center", color: "#9A7A7A" }}>
@@ -270,26 +278,15 @@ export default function AdminDeliveryDetailPage() {
     const cfg = STATUS_CONFIG[delivery.status] ?? STATUS_CONFIG.pending;
     const orderId = delivery.orderId?._id ?? delivery.orderId;
 
-    const inp: React.CSSProperties = {
-        width: "100%", padding: "9px 11px", border: "1.5px solid #E8D4D4",
-        borderRadius: 8, fontSize: "0.82rem", fontFamily: "inherit",
-        boxSizing: "border-box", outline: "none", background: "white",
-    };
-    const lbl: React.CSSProperties = {
-        fontSize: "0.68rem", fontWeight: 600, color: "#9A7A7A",
-        display: "block", marginBottom: 4,
-        textTransform: "uppercase", letterSpacing: "0.05em",
-    };
-
     return (
         <div style={{ padding: "24px", maxWidth: 960, margin: "0 auto" }}>
 
-            {/* Back nav */}
+            {/* ── Back nav ── */}
             <Link href="/admin/deliveries" style={{ fontSize: "0.78rem", color: "#9A7A7A", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 14 }}>
-                ← All Deliveries
+                {Ico.back} All Deliveries
             </Link>
 
-            {/* Title row */}
+            {/* ── Title row ── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
                 <div>
                     <h1 style={{ fontFamily: "Georgia, serif", color: "#6B4E4E", fontSize: "1.4rem", margin: "0 0 4px" }}>
@@ -300,14 +297,19 @@ export default function AdminDeliveryDetailPage() {
                         {orderId && (
                             <>
                                 {" · "}
-                                <Link href={`/admin/orders/${orderId}`} style={{ color: "#6B4E4E", textDecoration: "none" }}>
+                                <Link href={`/admin/orders/${orderId}`} style={{ color: "#6B4E4E", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
                                     Order #{String(orderId).slice(-8).toUpperCase()} {Ico.link}
                                 </Link>
                             </>
                         )}
                     </p>
                 </div>
-                <span style={{ padding: "5px 14px", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600, background: cfg.bg, color: cfg.color, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                {/* Status badge */}
+                <span style={{
+                    padding: "5px 14px", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600,
+                    background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dot }} />
                     {cfg.label}
                 </span>
@@ -323,13 +325,13 @@ export default function AdminDeliveryDetailPage() {
                 {!isCancelled && !isFailed ? (
                     <DeliveryPipeline status={delivery.status} />
                 ) : (
-                    <div style={{ padding: "12px 16px", background: isCancelled ? "#F3F4F6" : "#FEF2F2", borderRadius: 10, borderLeft: `3px solid ${isCancelled ? "#9CA3AF" : "#EF4444"}` }}>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: "0.85rem", color: isCancelled ? "#4B5563" : "#B91C1C" }}>
+                    <div style={{ padding: "12px 16px", background: isCancelled ? "#F9F5F5" : "#FFF1F2", borderRadius: 10, borderLeft: `3px solid ${isCancelled ? "#C4A0A0" : "#EF4444"}` }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: "0.85rem", color: isCancelled ? "#6B4E4E" : "#B91C1C" }}>
                             Delivery {isCancelled ? "Cancelled" : "Failed"}
                             {delivery.cancelledBy && ` by ${delivery.cancelledBy}`}
                         </p>
                         {delivery.cancelReason && (
-                            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#6B7280" }}>{delivery.cancelReason}</p>
+                            <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#9A7A7A" }}>{delivery.cancelReason}</p>
                         )}
                     </div>
                 )}
@@ -343,25 +345,26 @@ export default function AdminDeliveryDetailPage() {
             {/* ── Two-column: recipient + update panel ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
 
-                {/* Recipient details */}
+                {/* Recipient */}
                 <div style={{ background: "white", borderRadius: 14, padding: "18px 20px", border: "1px solid #F3E6E6" }}>
                     <h3 style={{ margin: "0 0 14px", fontSize: "0.85rem", fontWeight: 600, color: "#6B4E4E", display: "flex", alignItems: "center", gap: 6 }}>
                         {Ico.user} Recipient
                     </h3>
-                    <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
+                    <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                        {[
+                            { label: "Name", value: delivery.recipientName },
+                            { label: "Phone", value: delivery.recipientPhone },
+                        ].map(({ label, value }) => (
+                            <div key={label}>
+                                <dt style={{ fontSize: "0.62rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, fontWeight: 700 }}>{label}</dt>
+                                <dd style={{ margin: 0, fontSize: "0.85rem", fontWeight: 500, color: "#6B4E4E" }}>{value}</dd>
+                            </div>
+                        ))}
                         <div>
-                            <dt style={{ fontSize: "0.65rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 1 }}>Name</dt>
-                            <dd style={{ margin: 0, fontWeight: 600, color: "#6B4E4E" }}>{delivery.recipientName}</dd>
-                        </div>
-                        <div>
-                            <dt style={{ fontSize: "0.65rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 1 }}>Phone</dt>
-                            <dd style={{ margin: 0, color: "#7A6060" }}>{delivery.recipientPhone}</dd>
-                        </div>
-                        <div>
-                            <dt style={{ fontSize: "0.65rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 1, display: "flex", alignItems: "center", gap: 4 }}>
+                            <dt style={{ fontSize: "0.62rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                                 {Ico.pin} Address
                             </dt>
-                            <dd style={{ margin: 0, color: "#7A6060", lineHeight: 1.5 }}>
+                            <dd style={{ margin: 0, fontSize: "0.82rem", color: "#6B4E4E", lineHeight: 1.6 }}>
                                 {delivery.address?.street}<br />
                                 {delivery.address?.city}{delivery.address?.state && `, ${delivery.address.state}`}
                                 {delivery.address?.zip && ` ${delivery.address.zip}`}<br />
@@ -370,28 +373,34 @@ export default function AdminDeliveryDetailPage() {
                         </div>
                         {delivery.scheduledDate && (
                             <div>
-                                <dt style={{ fontSize: "0.65rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 1 }}>Scheduled</dt>
-                                <dd style={{ margin: 0, color: "#7A6060" }}>{new Date(delivery.scheduledDate).toLocaleDateString("en-NP", { weekday: "short", day: "numeric", month: "short" })}</dd>
+                                <dt style={{ fontSize: "0.62rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, fontWeight: 700 }}>Scheduled</dt>
+                                <dd style={{ margin: 0, fontSize: "0.82rem", color: "#6B4E4E" }}>
+                                    {new Date(delivery.scheduledDate).toLocaleDateString("en-NP", { weekday: "short", day: "numeric", month: "short" })}
+                                </dd>
                             </div>
                         )}
                         {delivery.estimatedDelivery && (
                             <div>
-                                <dt style={{ fontSize: "0.65rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 1, display: "flex", alignItems: "center", gap: 4 }}>
+                                <dt style={{ fontSize: "0.62rem", color: "#9A7A7A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                                     {Ico.clock} Est. Delivery
                                 </dt>
-                                <dd style={{ margin: 0, color: "#7A6060" }}>{new Date(delivery.estimatedDelivery).toLocaleDateString("en-NP", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</dd>
+                                <dd style={{ margin: 0, fontSize: "0.82rem", color: "#6B4E4E" }}>
+                                    {new Date(delivery.estimatedDelivery).toLocaleDateString("en-NP", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                                </dd>
                             </div>
                         )}
                     </dl>
                 </div>
 
-                {/* Update panel — only if not terminal */}
+                {/* Update panel */}
                 {canEdit ? (
                     <div style={{ background: "white", borderRadius: 14, padding: "18px 20px", border: "1px solid #F3E6E6" }}>
                         <h3 style={{ margin: "0 0 14px", fontSize: "0.85rem", fontWeight: 600, color: "#6B4E4E" }}>
                             Update Delivery
                         </h3>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+                            {/* Status select */}
                             <div>
                                 <label style={lbl}>Status</label>
                                 <select
@@ -404,16 +413,20 @@ export default function AdminDeliveryDetailPage() {
                                     ))}
                                 </select>
                             </div>
+
+                            {/* Date picker */}
                             <div>
                                 <label style={lbl}>Estimated Delivery Date</label>
                                 <input
                                     type="date"
                                     value={editEst}
                                     onChange={e => setEditEst(e.target.value)}
-                                    style={inp}
                                     min={new Date().toISOString().split("T")[0]}
+                                    style={inp}   // ✅ color: "#6B4E4E" included in inp
                                 />
                             </div>
+
+                            {/* Notes textarea */}
                             <div>
                                 <label style={{ ...lbl, display: "flex", alignItems: "center", gap: 4 }}>
                                     {Ico.note} Internal Notes
@@ -423,9 +436,11 @@ export default function AdminDeliveryDetailPage() {
                                     onChange={e => setEditNotes(e.target.value)}
                                     placeholder="Driver info, handling instructions…"
                                     rows={2}
-                                    style={{ ...inp, resize: "vertical" }}
+                                    style={{ ...inp, resize: "vertical" }}   // ✅ color: "#6B4E4E" included
                                 />
                             </div>
+
+                            {/* Action buttons */}
                             <div style={{ display: "flex", gap: 8 }}>
                                 <button
                                     onClick={handleSaveChanges}
@@ -434,7 +449,7 @@ export default function AdminDeliveryDetailPage() {
                                         flex: 1, padding: "9px", background: saving ? "#C4A090" : "#6B4E4E",
                                         color: "white", border: "none", borderRadius: 8,
                                         cursor: saving ? "not-allowed" : "pointer",
-                                        fontSize: "0.82rem", fontFamily: "inherit", fontWeight: 500,
+                                        fontSize: "0.82rem", fontFamily: "inherit", fontWeight: 600,
                                         display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                                     }}
                                 >
@@ -456,7 +471,7 @@ export default function AdminDeliveryDetailPage() {
                 ) : (
                     <div style={{ background: "white", borderRadius: 14, padding: "18px 20px", border: "1px solid #F3E6E6", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <p style={{ color: "#9A7A7A", fontSize: "0.85rem", textAlign: "center", margin: 0 }}>
-                            This delivery is <strong>{cfg.label.toLowerCase()}</strong> and cannot be modified.
+                            This delivery is <strong style={{ color: "#6B4E4E" }}>{cfg.label.toLowerCase()}</strong> and cannot be modified.
                         </p>
                     </div>
                 )}
@@ -465,13 +480,13 @@ export default function AdminDeliveryDetailPage() {
             {/* ── Tracking updates ── */}
             <div style={{ background: "white", borderRadius: 14, padding: "18px 20px", border: "1px solid #F3E6E6" }}>
                 <h3 style={{ margin: "0 0 16px", fontSize: "0.85rem", fontWeight: 600, color: "#6B4E4E" }}>
-                    Tracking Updates
-                    <span style={{ marginLeft: 8, fontSize: "0.72rem", fontWeight: 400, color: "#9A7A7A" }}>
+                    Tracking Updates{" "}
+                    <span style={{ marginLeft: 6, fontSize: "0.72rem", fontWeight: 400, color: "#9A7A7A" }}>
                         ({delivery.trackingUpdates?.length || 0} total · visible to customer)
                     </span>
                 </h3>
 
-                {/* Add new update */}
+                {/* ✅ Add tracking input — explicit color fixed here too */}
                 {!isCancelled && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
                         <input
@@ -480,15 +495,27 @@ export default function AdminDeliveryDetailPage() {
                             onChange={e => setTrackingMsg(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && !addingTrack && handleAddTracking()}
                             placeholder="e.g. Package picked up from store — press Enter or click Add"
-                            style={{ flex: 1, padding: "9px 12px", border: "1.5px solid #E8D4D4", borderRadius: 8, fontSize: "0.82rem", fontFamily: "inherit", outline: "none" }}
+                            style={{
+                                flex: 1,
+                                padding: "9px 12px",
+                                border: "1.5px solid #E8D4D4",
+                                borderRadius: 8,
+                                fontSize: "0.82rem",
+                                fontFamily: "inherit",
+                                outline: "none",
+                                color: "#6B4E4E",           // ✅ THE key fix for this field
+                                background: "white",
+                            }}
                         />
                         <button
                             onClick={handleAddTracking}
                             disabled={addingTrack || !trackingMsg.trim()}
                             style={{
                                 padding: "9px 16px", background: "#6B4E4E", color: "white",
-                                border: "none", borderRadius: 8, cursor: !trackingMsg.trim() ? "not-allowed" : "pointer",
+                                border: "none", borderRadius: 8,
+                                cursor: !trackingMsg.trim() ? "not-allowed" : "pointer",
                                 fontSize: "0.82rem", fontFamily: "inherit", whiteSpace: "nowrap",
+                                fontWeight: 600,
                                 opacity: !trackingMsg.trim() ? 0.5 : 1,
                                 display: "flex", alignItems: "center", gap: 5,
                             }}
@@ -500,7 +527,7 @@ export default function AdminDeliveryDetailPage() {
 
                 {/* Timeline */}
                 {!delivery.trackingUpdates?.length ? (
-                    <p style={{ color: "#9A7A7A", fontSize: "0.82rem" }}>No tracking updates yet.</p>
+                    <p style={{ color: "#9A7A7A", fontSize: "0.82rem", margin: 0 }}>No tracking updates yet.</p>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         {[...delivery.trackingUpdates].reverse().map((update: any, idx: number) => {
@@ -508,7 +535,6 @@ export default function AdminDeliveryDetailPage() {
                             const total = delivery.trackingUpdates.length;
                             return (
                                 <div key={idx} style={{ display: "flex", gap: 12, paddingBottom: idx < total - 1 ? 16 : 0 }}>
-                                    {/* Dot + line */}
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
                                         <div style={{
                                             width: 10, height: 10, borderRadius: "50%", marginTop: 4, flexShrink: 0,
@@ -519,7 +545,6 @@ export default function AdminDeliveryDetailPage() {
                                             <div style={{ width: 1, flex: 1, background: "#F0E0D8", marginTop: 3 }} />
                                         )}
                                     </div>
-                                    {/* Content */}
                                     <div style={{ paddingBottom: idx < total - 1 ? 4 : 0, flex: 1 }}>
                                         <p style={{ margin: 0, fontSize: "0.85rem", color: isLatest ? "#3D2314" : "#6B4E4E", fontWeight: isLatest ? 500 : 400 }}>
                                             {update.message}
@@ -548,13 +573,21 @@ export default function AdminDeliveryDetailPage() {
                         <p style={{ margin: "0 0 14px", color: "#9A7A7A", fontSize: "0.85rem" }}>
                             This reason will appear in the customer's tracking timeline.
                         </p>
+                        {/* ✅ Cancel reason textarea — explicit color */}
                         <textarea
                             value={cancelReason}
                             onChange={e => setCancelReason(e.target.value)}
                             placeholder="e.g. Driver unavailable in this area"
                             rows={3}
                             autoFocus
-                            style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #E8D4D4", fontSize: "0.85rem", fontFamily: "inherit", boxSizing: "border-box", outline: "none", resize: "vertical" }}
+                            style={{
+                                width: "100%", padding: "10px 12px", borderRadius: 8,
+                                border: "1.5px solid #E8D4D4", fontSize: "0.85rem",
+                                fontFamily: "inherit", boxSizing: "border-box",
+                                outline: "none", resize: "vertical",
+                                color: "#6B4E4E",           // ✅ fixed here too
+                                background: "white",
+                            }}
                         />
                         <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
                             <button
